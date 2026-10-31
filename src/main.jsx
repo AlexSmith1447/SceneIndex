@@ -111,7 +111,7 @@ function ImportPage({threads,onImported,onDelete,onOpen,onTasteImport,onExport})
    </div>
   </Pane>
   <Pane label={"YOUR LOCAL IMPORTS ("+imported.length+")"} icon={Archive} extra={<button onClick={onExport} className="si-text-button"><Download size={13}/> Export JSON</button>}>
-   {imported.length?imported.map(t=><div className="si-import-row" key={t.id}><button onClick={()=>onOpen(t.id)}><strong>{t.title}</strong><small>{t.source} · {t.posts.length} posts</small></button><button className="si-icon-button" onClick={()=>{if(confirm("Delete this locally imported thread?"))onDelete(t.id)}} title="Remove imported thread"><Trash2 size={15}/></button></div>):<div className="si-empty mini">No personal imports yet. The starter source thread is still searchable.</div>}
+   {imported.length?imported.map(t=><div className="si-import-row" key={t.id}><button onClick={()=>onOpen(t.id)}><strong>{t.title}</strong><small>{t.source} · {t.posts.length} posts</small></button><button className="si-icon-button" onClick={()=>{if(confirm("Delete this locally imported thread?"))onDelete(t.id)}} title="Remove imported thread"><Trash2 size={15}/></button></div>):<div className="si-empty mini">No personal imports yet. The starter source threads remain searchable.</div>}
   </Pane>
  </div>;
 }
@@ -181,7 +181,7 @@ function App(){
     <Pane label="ARCHIVE AT A GLANCE" icon={Database}><div className="si-sidebar-stats">{Object.entries(stats(threads)).map(([name,value])=><div key={name}><span>{name}</span><strong>{value}</strong></div>)}</div></Pane>
     <Pane label="MUSIC TALK" icon={Music2}><div className="si-sidebar-tags">{["electronicore","emo","screamo","recommendations","pop-punk","scene"].map(s=><button key={s} onClick={()=>onFind(s)}>#{s}</button>)}</div></Pane>
     <Pane label="BOOKMARKS" icon={Bookmark}><div className="si-sidebar-content"><p>{saved.length} saved {saved.length===1?"thread":"threads"}</p><button className="si-sidebar-link" onClick={()=>navigate("saved")}>View saved discussions <ChevronRight size={13}/></button></div></Pane>
-    <div className="si-source-warning"><Info size={14}/><span>Only one source-grounded thread is preloaded. Import more real material to grow search and recommendations. No simulated forum conversations.</span></div>
+    <div className="si-source-warning"><Info size={14}/><span>Five source-grounded threads are preloaded. Import more real material to grow search and recommendations. No simulated forum conversations.</span></div>
    </aside>
   </div>
   <footer className="si-footer"><div className="si-container"><span><b>SCENEINDEX</b> · A search engine for the old music internet</span><span>Independent preservation project · Original forum sources credited</span></div></footer>
