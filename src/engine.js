@@ -42,7 +42,7 @@ function explicitRecommendations(p){
   if(Array.isArray(p.recommended))return p.recommended;
   const text=clean(p.text||"");
   // A single post may discuss bands without recommending all of them.
-  return [...new Set(text.split(/[.!?\n]+/).filter(sentence=>/\b(recommend|suggest|check out|try listening|you might like)\b/i.test(sentence)&&!/\b(?:don't|do not|does not|never|not)\s+(?:recommend|suggest)\b/i.test(sentence)).flatMap(findArtists))];
+  return [...new Set(text.split(/[.!?\n]+/).filter(sentence=>/\b(recommends?|recommended|suggests?|suggested|check out|try listening|you might like)\b/i.test(sentence)&&!/\b(?:don't|do not|does not|never|not)\s+(?:recommend|suggest)\b/i.test(sentence)).flatMap(findArtists))];
 }
 function userChoices(p){
   const mentions=findArtists(p.text||"");
