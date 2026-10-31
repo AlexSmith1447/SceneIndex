@@ -21,8 +21,8 @@ assert.ok(!preferred.some(x=>x.name==="BrokeNCYDE"),"Negative preference must no
 assert.ok(!preferred.some(x=>x.name==="Kill Hannah"),"Negative preference must not become a recommendation");
 const users=similarAuthors(starterThreads,["Breathe Carolina"]);
 assert.ok(users.some(x=>x.name==="Daniel"));
-assert.equal(stats(starterThreads).threads,1);
-assert.equal(stats(starterThreads).posts,2);
+assert.equal(stats(starterThreads).threads,5);
+assert.equal(stats(starterThreads).posts,10);
 assert.ok(artistCatalog.length>25);
 let r=await onRequestGet({request:new Request("https://scene.test/api/lastfm?status=1"),env:{}});
 assert.equal((await r.json()).configured,false);
