@@ -1,0 +1,42 @@
+import assert from "node:assert/strict";
+import {starterThreads,artistCatalog} from "../src/catalog.js";
+import {findArtists,threadArtists,searchThreads,buildGraph,discover,similarAuthors,stats} from "../src/engine.js";
+import {onRequestGet} from "../functions/api/lastfm.js";
+
+const seeded=starterThreads[0];
+assert.equal(seeded.posts.length,2);
+assert.equal(seeded.origin,"verified-paraphrase");
+assert.ok(seeded.sourceUrl.startsWith("https://"));
+assert.ok(findArtists("I love Sky Eats Airplane and Breathe Carolina").includes("Sky Eats Airplane"));
+assert.ok(!findArtists("notforsky eats airplane").includes("Sky Eats Airplane"));
+assert.equal(searchThreads(starterThreads,{q:"The Medic Droid"}).length,1);
+assert.equal(searchThreads(starterThreads,{q:"random nonexistent musician"}).length,0);
+assert.ok(threadArtists(seeded).includes("Scary Kids Scaring Kids"));
+const graph=buildGraph(starterThreads);
+const preferred=discover(starterThreads,["Sky Eats Airplane"]);
+const result=preferred.find(x=>x.name==="The Medic Droid");
+assert.ok(result,"The Medic Droid should be recommended based on a real reply");
+assert.ok(result.evidence.some(e=>e.kind==="recommended"&&e.source==="LP Association Forums"));
+assert.ok(!preferred.some(x=>x.name==="BrokeNCYDE"),"Negative preference must not become a recommendation");
+assert.ok(!preferred.some(x=>x.name==="Kill Hannah"),"Negative preference must not become a recommendation");
+const users=similarAuthors(starterThreads,["Breathe Carolina"]);
+assert.ok(users.some(x=>x.name==="Daniel"));
+assert.equal(stats(starterThreads).threads,1);
+assert.equal(stats(starterThreads).posts,2);
+assert.ok(artistCatalog.length>25);
+let r=await onRequestGet({request:new Request("https://scene.test/api/lastfm?status=1"),env:{}});
+assert.equal((await r.json()).configured,false);
+r=await onRequestGet({request:new Request("https://scene.test/api/lastfm?user=tester"),env:{}});
+assert.equal(r.status,503);
+r=await onRequestGet({request:new Request("https://scene.test/api/lastfm?user=https://evil.com"),env:{LASTFM_API_KEY:"key"}});
+assert.equal(r.status,400);
+const previous=globalThis.fetch;let fetchURL="";
+try{
+ globalThis.fetch=async url=>{fetchURL=String(url);return new Response(JSON.stringify({topartists:{artist:[{name:"The Medic Droid",playcount:"12"}]}}),{status:200,headers:{"Content-Type":"application/json"}})};
+ r=await onRequestGet({request:new Request("https://scene.test/api/lastfm?user=tester&mode=top"),env:{LASTFM_API_KEY:"key"}});
+ assert.equal(r.status,200);const result=await r.json();
+ assert.equal(result.artists[0].name,"The Medic Droid");assert.equal(result.artists[0].plays,12);
+ assert.ok(fetchURL.includes("api_key=key"));
+ assert.ok(!JSON.stringify(result).includes('"key"'));
+}finally{globalThis.fetch=previous}
+console.log("SceneIndex engine and optional Last.fm proxy tests passed.");
