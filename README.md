@@ -9,10 +9,10 @@ A late-2000s-style forum archive and music-discovery engine. Built separately fr
 - Music taste crate: manually enter artists, import a scrobble CSV or optionally use Last.fm recent top artists.
 - Explainable music recommendations and forum-author taste overlaps: derived from **real imported conversation evidence**, distinguishing mentions, requests and explicit recommendations.
 - Import HTML saved from XenForo, vBulletin, phpBB and Invision boards, SceneIndex JSON, or manually formatted posts; export your local imports.
-- A source-linked **May 29, 2008** LP Association thread is preloaded, shown as clearly marked paraphrases (not verbatim historical messages).
+- Five source-linked **2007–2008** LP Association threads are preloaded, shown as clearly marked paraphrases (not verbatim historical messages).
 - Local persistence using IndexedDB (threads) and localStorage (music crate and bookmarks).
 
-**Important:** The starter archive contains one real, sourced thread. The forum directory lists other prospective sources but does not imply that those threads have already been indexed.
+**Important:** The starter archive contains five real, sourced threads. The forum directory lists other prospective sources but does not imply that those threads have already been indexed.
 
 ## Deployment
 
