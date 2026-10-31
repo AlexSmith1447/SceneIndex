@@ -38,6 +38,12 @@ export function searchThreads(threads,{q="",source="all",year="all",tag="all",so
   return results;
 }
 export const threadArtists=t=>[...new Set((t.posts||[]).flatMap(p=>findArtists(p.text||"")))];
+function explicitRecommendations(p){
+  if(Array.isArray(p.recommended))return p.recommended;
+  const text=clean(p.text||"");
+  // A single post may discuss bands without recommending all of them.
+  return [...new Set(text.split(/[.!?\n]+/).filter(sentence=>/\b(recommend|suggest|check out|try listening|you might like)\b/i.test(sentence)&&!/\b(?:don't|do not|does not|never|not)\s+(?:recommend|suggest)\b/i.test(sentence)).flatMap(findArtists))];
+}
 function userChoices(p){
   const mentions=findArtists(p.text||"");
   const excluded=new Set((p.excluded||[]).map(key));
@@ -69,7 +75,7 @@ export function buildGraph(threads) {
       const evidence={threadId:thread.id,thread:thread.title,source:thread.source,url:thread.sourceUrl,postId:p.id,author:p.author,date:p.date,origin:thread.origin};
       for(let i=0;i<p.artists.length;i++)for(let j=i+1;j<p.artists.length;j++)add(p.artists[i],p.artists[j],.35,evidence,"co-mentioned");
       if(p.kind==="recommendation"&&requested.length){
-        for(const recommendation of p.artists)for(const prompt of requested)add(prompt,recommendation,4,evidence,"recommended");
+        for(const recommendation of explicitRecommendations(p))for(const prompt of requested)add(prompt,recommendation,4,evidence,"recommended");
       }
     }
   }
