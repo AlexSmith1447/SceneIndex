@@ -53,6 +53,17 @@ try{
   }catch(e){return {status:0,error:e.message}}
  });
  console.log("WAYBACK_PROBE",JSON.stringify(capturesProbe));
+ const snapshotProbe=await page.evaluate(async()=>{
+  const target="https://www.lpassociation.com/forum/threads/saosin.22761/";
+  try{
+   const a=await fetch("/api/archive?"+new URLSearchParams({mode:"captures",url:target}));
+   const j=await a.json();if(!j.captures?.length)return {status:0,error:"No captures"};
+   const b=await fetch("/api/archive?"+new URLSearchParams({mode:"fetch",url:j.captures[0].url}));
+   const k=await b.json();
+   return {status:b.status,ok:b.ok,bytes:k.bytes||0,error:k.error||null};
+  }catch(e){return {status:0,error:e.message}}
+ });
+ console.log("WAYBACK_SNAPSHOT_FETCH",JSON.stringify(snapshotProbe));
  if(importStatus.includes("Imported 1 thread"))console.log("IMPORT_URL_SUCCESS");
 
  if(!rawProbe.ok)console.log("ARCHIVE_PROXY_WARNING",rawProbe.error);
