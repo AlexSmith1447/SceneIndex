@@ -9,10 +9,10 @@ A late-2000s-style forum archive and music-discovery engine. Built separately fr
 - Music taste crate: manually enter artists, import a scrobble CSV or optionally use Last.fm recent top artists.
 - Explainable music recommendations and forum-author taste overlaps: derived from **real imported conversation evidence**, distinguishing mentions, requests and explicit recommendations.
 - Import HTML saved from XenForo, vBulletin, phpBB and Invision boards, SceneIndex JSON, or manually formatted posts; export your local imports.
-- Five source-linked **2007–2008** LP Association threads are preloaded, shown as clearly marked paraphrases (not verbatim historical messages).
+- Eleven source-linked **2006–2009** LP Association threads are preloaded, shown as clearly marked paraphrases (not verbatim historical messages).
 - Local persistence using IndexedDB (threads) and localStorage (music crate and bookmarks).
 
-**Important:** The starter archive contains five real, sourced threads. The forum directory lists other prospective sources but does not imply that those threads have already been indexed.
+**Important:** The starter archive contains eleven real, source-linked discussions. The forum directory lists other prospective sources but does not imply that those threads have already been indexed.
 
 ## Deployment
 
@@ -44,6 +44,8 @@ Then redeploy. The browser never sees that key. Check `/api/lastfm?status=1` for
 
 ## Importing old forums
 
+**Live URL importing is now available.** On the Import page, paste a public LP Association or Chorus thread URL and click **Import this URL**. The deployed Cloudflare Pages Function fetches allowed source HTML and the browser parses posts, saving to IndexedDB. Up to 12 URLs can be processed in a user-initiated batch. The **Find Wayback captures** button queries the public Internet Archive CDX index where available; snapshot access is dependent on archive availability, rights, and rate limits. Unsupported direct hosts are deliberately blocked instead of turning SceneIndex into an arbitrary URL proxy. Saved HTML imports work as a fallback.
+
 1. Save a publicly accessible forum thread as **HTML** with your browser and import that file. HTML extraction is best-effort and targets common markup used by XenForo, vBulletin, phpBB and Invision; different skins may need a site-specific parser.
 2. Or use **Paste a thread**: write messages as `Username: message` and separate each reply with a standalone `---` line.
 3. SceneIndex builds an index of recognizable artist names, text, usernames, dates, tags and source references.
@@ -54,6 +56,10 @@ The import process occurs **in your browser**. It does **not** automatically fet
 ## Recommendation model
 
 For each archived thread, SceneIndex extracts artist mentions from a maintained alias catalog. It gives a **stronger weight** to explicit recommendations answering an earlier request than to simple co-mentions. The Discovery page exposes source threads for every supported result and returns an empty state when there is insufficient evidence. Negative preferences are filtered conservatively. Genre tags alone do not produce fake recommendation links.
+
+Search supports exact phrases in quotes and negative terms prefixed with a minus sign, and ranks matches by title, tags, author and post text. Results preview the reply containing the match rather than blindly taking the first message.
+
+Taste overlap uses explicit favorites where the archive provides them, not every artist mentioned. Explicit recommendations rank above mere co-mentions; massive band lists receive reduced weight. This is an interpretable heuristic, **not a mature recommendation model or a claim of verified user sentiment**.
 
 The first verified chain is a 2008 [LP Association discussion](https://www.lpassociation.com/forum/threads/electronica-emo-screamo.27909/): the original poster asked for bands similar to Scary Kids Scaring Kids, Sky Eats Airplane, Breathe Carolina and Forever the Sickest Kids, and another participant suggested The Medic Droid. Starter posts are explicitly **paraphrases** and retain their source link.
 
@@ -67,6 +73,14 @@ npm run build
 ```
 
 Uses React, Vite, a static local index, IndexedDB and optional Cloudflare Pages Functions.
+
+## Image credits
+
+The 2009-inspired homepage features genuine period concert photos from Wikimedia Commons:
+- [Saosin live on Projekt Revolution tour (2007)](https://commons.wikimedia.org/wiki/File:Saosin_live_on_Projekt_Revolution_tour.jpg) — Markfredrickson, public domain.
+- [Taking Back Sunday live in Boston (2007)](https://commons.wikimedia.org/wiki/File:Taking_Back_Sunday_live_in_Boston.jpg) — Debs, [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/). The photo is cropped/resized by responsive CSS.
+
+The interface takes broad visual inspiration from the user's 2009 AbsolutePunk screenshot; branding, banner copy, and page structure are independently implemented. The original design's history is documented by [Chorus.fm](https://chorus.fm/features/articles/absolutepunk-net-throughout-the-years/).
 
 ## Future expansion
 
