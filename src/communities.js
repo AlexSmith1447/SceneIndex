@@ -6,7 +6,7 @@ export const sceneSections=[
  {id:"posthardcore",name:"Post-Hardcore",about:"Melodic, experimental and theatrical post-hardcore discussion."},
  {id:"poppunk",name:"Pop-Punk",about:"Pop-punk and its crossover with the mid-2000s alternative music press."},
  {id:"electronic",name:"Electronic / Scene",about:"Electronicore, electropop, synth-driven scene rock, crunkcore and Nintendocore."},
- {id:"goth",name:"Goth / Industrial",about:"Gothic rock, industrial, darkwave, deathrock and adjacent alternative communities."},
+ {id:"goth",name:"Goth / Industrial",about:"Gothic rock, industrial, darkwave and deathrock communities. Gothic-looking post-hardcore bands overlap culturally without necessarily belonging to goth rock."},
  {id:"hardcore",name:"Hardcore / Punk",about:"Hardcore, punk, skramz and regional DIY music boards."}
 ];
 export const communities=[
