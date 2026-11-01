@@ -151,10 +151,12 @@ function App(){
  const [topSearch,setTopSearch]=useState(""),[favorites,setFavorites]=useState(()=>{const artists=readPref("favorites",[]);configureExtraArtists(artists);return artists});
  const [saved,setSaved]=useState(()=>readPref("saved",[])),[menu,setMenu]=useState(false),[lastfm,setLastfm]=useState(()=>readPref("lastfm",""));
  const [fmBusy,setFmBusy]=useState(false),[fmStatus,setFmStatus]=useState("");
+ const [classicWidth,setClassicWidth]=useState(()=>readPref("classicWidth",false));
  useEffect(()=>{loadThreads().then(t=>setThreads(t)).finally(()=>setLoading(false))},[]);
  useEffect(()=>writePref("favorites",favorites),[favorites]);
  useEffect(()=>writePref("saved",saved),[saved]);
  useEffect(()=>writePref("lastfm",lastfm),[lastfm]);
+ useEffect(()=>writePref("classicWidth",classicWidth),[classicWidth]);
  const navigate=p=>{setPage(p);setMenu(false);window.scrollTo(0,0);history.replaceState({},"",location.pathname)};
  const openThread=id=>{setActiveThread(id);setPage("thread");setMenu(false);window.scrollTo(0,0);history.replaceState({},"","?thread="+encodeURIComponent(id))};
  useEffect(()=>{if(!loading){const id=new URLSearchParams(location.search).get("thread");if(id&&threads.some(t=>t.id===id)){setActiveThread(id);setPage("thread")}}},[loading]);
@@ -173,11 +175,12 @@ function App(){
  }
  const onFind=a=>{setTopSearch(a);setSearchTerm(a);navigate("search")};
  const selectedThread=threads.find(t=>t.id===activeThread);
+ const tagCounts=Object.entries(threads.flatMap(t=>t.tags||[]).reduce((acc,tag)=>{acc[tag]=(acc[tag]||0)+1;return acc},{})).sort((a,b)=>b[1]-a[1]).slice(0,9);
  const items=[["home","Forums",MessageSquare],["search","Search",Search],["discover","Discover",Disc3],["sources","Sources",FolderOpen],["import","Import",Upload]];
- return <div className="si-app">
+ return <div className={"si-app"+(classicWidth?" si-classic-width":"")}>
   <div className="si-top-accent"/>
   <header className="si-header"><div className="si-container si-header-inner"><button className="si-brand" onClick={()=>navigate("home")}><span className="si-brand-icon">S<span>/</span>I</span><span><strong>SCENE<span>INDEX</span></strong><small>the scene music archive</small></span></button><PortalHeaderArt/></div></header>
-  <div className="si-nav"><div className="si-container si-nav-inner"><button className="si-mobile-toggle" onClick={()=>setMenu(!menu)}><Menu size={17}/> Menu</button><nav className={menu?"open":""}>{items.map(([id,label,Icon])=><button key={id} className={page===id?"active":""} onClick={()=>navigate(id)}><Icon size={14}/>{label}</button>)}</nav><form onSubmit={runSearch} className="si-header-search"><Search size={14}/><input value={topSearch} onChange={e=>setTopSearch(e.target.value)} placeholder="Search bands, threads, people..." aria-label="Global search"/><button aria-label="Submit search"><ArrowRight size={14}/></button></form></div></div>
+  <div className="si-nav"><div className="si-container si-nav-inner"><button className="si-mobile-toggle" onClick={()=>setMenu(!menu)}><Menu size={17}/> Menu</button><nav className={menu?"open":""}>{items.map(([id,label,Icon])=><button key={id} className={page===id?"active":""} onClick={()=>navigate(id)}><Icon size={14}/>{label}</button>)}</nav><form onSubmit={runSearch} className="si-header-search"><Search size={14}/><input value={topSearch} onChange={e=>setTopSearch(e.target.value)} placeholder="Search bands, threads, people..." aria-label="Global search"/><button aria-label="Submit search"><ArrowRight size={14}/></button></form><button className="si-width-choice" onClick={()=>setClassicWidth(!classicWidth)} title={classicWidth?"Expand the forum layout":"View at the original fixed-width proportions"}>{classicWidth?"Wide layout":"Classic width"}</button></div></div>
   <div className="si-container si-grid">
    <main className="si-main">{loading?<div className="si-empty">Opening your local archive...</div>:
     page==="home"?<PortalHome threads={threads} onOpen={openThread} onNavigate={navigate} onArtist={openArtist}/>:
@@ -191,10 +194,9 @@ function App(){
    </main>
    <aside className="si-sidebar">
     {page==="home"&&<PortalAside onArtist={openArtist} onNavigate={navigate} threads={threads}/>}
-    <Pane label="YOUR LISTENING PROFILE" icon={Headphones}><div className="si-sidebar-content"><p>Shape discoveries around your own taste.</p><div className="si-sidebar-count">{favorites.length}<span>artists in your crate</span></div><button className="si-sidebar-link" onClick={()=>navigate("discover")}>Edit music taste <ChevronRight size={13}/></button></div></Pane>
-    <Pane label="LAST.FM IMPORT" icon={Disc3}><form className="si-sidebar-content si-lastfm" onSubmit={fetchLastfm}><label>Last.fm username<input value={lastfm} onChange={e=>setLastfm(e.target.value)} placeholder="username" aria-label="Last.fm username"/></label><button disabled={fmBusy} className="si-button small"><RefreshCw size={13}/>{fmBusy?"Loading":"Load recent top artists"}</button>{fmStatus&&<p className="si-fm-status">{fmStatus}</p>}<small>Optional. Requires a private API key in Cloudflare; CSV works without one.</small></form></Pane>
+    <Pane label="MY MUSIC" icon={Headphones}><div className="si-sidebar-content"><div className="si-sidebar-count">{favorites.length}<span>artists in your collection</span></div><button className="si-sidebar-link" onClick={()=>navigate("discover")}>Find music from my taste <ChevronRight size={13}/></button><details className="si-listening-details"><summary>Import Last.fm listening history</summary><form className="si-lastfm" onSubmit={fetchLastfm}><label>Last.fm username<input value={lastfm} onChange={e=>setLastfm(e.target.value)} placeholder="username" aria-label="Last.fm username"/></label><button disabled={fmBusy} className="si-button small"><RefreshCw size={13}/>{fmBusy?"Loading":"Load recent top artists"}</button>{fmStatus&&<p className="si-fm-status">{fmStatus}</p>}<small>Requires a private API key configured in Cloudflare. CSV import is also available.</small></form></details></div></Pane>
     <Pane label="ARCHIVE AT A GLANCE" icon={Database}><div className="si-sidebar-stats">{Object.entries(stats(threads)).map(([name,value])=><div key={name}><span>{name}</span><strong>{value}</strong></div>)}</div></Pane>
-    <Pane label="MUSIC TALK" icon={Music2}><div className="si-sidebar-tags">{["electronicore","emo","screamo","recommendations","pop-punk","scene"].map(s=><button key={s} onClick={()=>onFind(s)}>#{s}</button>)}</div></Pane>
+    <Pane label="DISCUSSION TAGS" icon={Music2}><div className="si-sidebar-tags">{tagCounts.map(([tag,count])=><button key={tag} onClick={()=>onFind(tag)}>#{tag} <small>({count})</small></button>)}</div></Pane>
     <Pane label="BOOKMARKS" icon={Bookmark}><div className="si-sidebar-content"><p>{saved.length} saved {saved.length===1?"thread":"threads"}</p><button className="si-sidebar-link" onClick={()=>navigate("saved")}>View saved discussions <ChevronRight size={13}/></button></div></Pane>
     <div className="si-source-warning"><Info size={14}/><span>Public records contain summaries and locally imported threads. Inspect original sources before treating an old recommendation as evidence.</span></div>
    </aside>
