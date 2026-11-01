@@ -3,6 +3,19 @@ import {normalize} from "./engine.js";
 const clamp=(s,n)=>String(s??"").trim().slice(0,n);
 const validURL=str=>{try{let u=new URL(str);return /^https?:$/.test(u.protocol)?u.href:""}catch{return ""}};
 const dateish=d=>/^\d{4}-\d{2}-\d{2}$/.test(String(d))?d:"";
+const dateFrom=(raw)=>{
+ const s=String(raw||"").trim();
+ if(!s)return null;
+ if(/^\d{10,13}$/.test(s)){
+  const n=Number(s);const d=new Date(s.length===10?n*1000:n);
+  if(Number.isFinite(d.valueOf()))return d.toISOString().slice(0,10);
+ }
+ const iso=s.match(/\b(19\d{2}|20\d{2})[-/](0?[1-9]|1[0-2])[-/](0?[1-9]|[12]\d|3[01])\b/);
+ if(iso)return iso[1]+"-"+iso[2].padStart(2,"0")+"-"+iso[3].padStart(2,"0");
+ const named=s.match(/\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},?\s+(?:19|20)\d{2}\b/i);
+ if(named){const d=new Date(named[0]);if(Number.isFinite(d.valueOf()))return d.toISOString().slice(0,10)}
+ return null;
+};
 const slug=s=>normalize(s).replace(/ /g,"-").slice(0,65);
 const generatedId=()=>typeof crypto?.randomUUID==="function"?crypto.randomUUID():""+Date.now()+"-"+Math.random().toString(36).slice(2,10);
 const postKind=text=>/\b(recommends?|recommended|suggests?|suggested|check out|try listening|you might like)\b/i.test(text)?"recommendation":/\b(looking for|any recommendations|similar to|what bands)\b/i.test(text)?"request":"discussion";
@@ -20,7 +33,7 @@ function validate(raw){
   if(!p.length)throw new Error("No posts were detected.");
   return {id:identifier(url,title,date),title,source,sourceUrl:url,board:clamp(obj.board||"Imported discussions",100),
     date,year:Number(date.slice(0,4)),origin:"user-import",excerptOnly:!!obj.excerptOnly,
-    captureUrl:validURL(obj.captureUrl)||null,dateBasis:obj.dateBasis==="capture"?"capture":"post",
+    captureUrl:validURL(obj.captureUrl)||null,dateBasis:["post","capture","unknown"].includes(obj.dateBasis)?obj.dateBasis:"post",
     tags:(Array.isArray(obj.tags)?obj.tags:[]).map(x=>slug(x)).filter(Boolean).slice(0,15),
     posts:p.slice(0,250).map((post,i)=>({
       id:"p-"+(i+1),author:clamp(post.author||"Unknown",70),date:dateish(post.date)||(obj.dateBasis==="capture"?null:date),role:clamp(post.role||"Member",70),
@@ -55,9 +68,8 @@ export function parseHTML(html,{source="Imported forum",sourceUrl="",captureUrl=
     const clone=(content||node).cloneNode(true);
     clone.querySelectorAll("blockquote, .bbCodeBlock, .signature, .message-signature, .js-signature, .quote, script, style, nav, form").forEach(el=>el.remove());
     const body=human(clone);
-    const rawDate=node.querySelector("time")?.getAttribute("datetime")||node.querySelector("time")?.getAttribute("title")||node.querySelector("[data-time]")?.getAttribute("data-time")||"";
-    const dateMatch=String(rawDate).match(/\d{4}-\d{2}-\d{2}/);
-    const ts=Number(rawDate);const date= dateMatch?.[0]||(ts>1000000000?new Date(ts*1000).toISOString().slice(0,10):undefined);
+    const dates=[...node.querySelectorAll("time, abbr.DateTime, span.DateTime, a.datePermalink, .message-attribution, .postdate, [data-time]")];
+    const date=dates.flatMap(e=>[e.getAttribute("datetime"),e.getAttribute("data-time"),e.getAttribute("title"),e.getAttribute("data-datestring"),e.textContent]).map(dateFrom).find(Boolean)||null;
     return {author:author||"Unknown",text:body,role:"Member",date,kind:postKind(body)};
   }).filter(p=>p.text.length>=10 && p.text.length<12001);
   const pageTitle=title||text(doc,"h1")||doc.title||"Imported thread";
@@ -65,8 +77,10 @@ export function parseHTML(html,{source="Imported forum",sourceUrl="",captureUrl=
   const archiveTimestamp=String(captureUrl||"").match(/\/web\/(\d{4})(\d{2})(\d{2})/);
   const capturedDate=archiveTimestamp?archiveTimestamp[1]+"-"+archiveTimestamp[2]+"-"+archiveTimestamp[3]:null;
   if(!parsed.length)throw new Error("Post containers found, but no readable message text.");
-  if(!firstDate&&!capturedDate)throw new Error("No original post date could be extracted. Use manual import to supply a verified date rather than mislabeling the discussion as recent.");
-  return [validate({title:pageTitle,source,sourceUrl,captureUrl,date:firstDate||capturedDate,dateBasis:firstDate?"post":"capture",board:"Imported discussions",posts:parsed})];
+  // Unknown dates are indexed with a sentinel that always sorts last; they are NEVER displayed as 0000.
+  // A snapshot's date is only an upper bound, not the thread creation date.
+  const basis=firstDate?"post":capturedDate?"capture":"unknown";
+  return [validate({title:pageTitle,source,sourceUrl,captureUrl,date:firstDate||capturedDate||"0000-01-01",dateBasis:basis,board:"Imported discussions",posts:parsed})];
 }
 export function parseManual({title,source,sourceUrl,board,raw,date}){
   const parts=raw.split(/\n\s*---+\s*\n/).map(p=>p.trim()).filter(Boolean);
