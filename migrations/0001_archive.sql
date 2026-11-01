@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS archive_threads (
   origin TEXT NOT NULL DEFAULT 'user-import',
   excerpt_only INTEGER NOT NULL DEFAULT 0,
   capture_url TEXT,
+  date_basis TEXT NOT NULL DEFAULT 'post',
   imported_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 CREATE TABLE IF NOT EXISTS archive_posts (
