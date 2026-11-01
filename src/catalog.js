@@ -1,4 +1,5 @@
 import {extraThreads} from "./moreThreads.js";
+import {additionalForumThreads} from "./additionalForumThreads.js";
 // SceneIndex's starter archive contains only source-grounded material.
 // Paraphrases are explicitly labeled; no fictional forum conversation is presented as real.
 const coreThreads = [
@@ -49,7 +50,7 @@ const coreThreads = [
   }
 ];
 
-export const starterThreads=[...coreThreads,...extraThreads];
+export const starterThreads=[...coreThreads,...extraThreads,...additionalForumThreads];
 
 export const artistCatalog = [
   ["Fugazi",[],"post-hardcore","1986–2003"],
