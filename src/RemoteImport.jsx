@@ -46,7 +46,7 @@ export default function RemoteImport({onImported,existing=[]}){
   const skipped=unique.length-pending.length;
   if(!pending.length){setMessage("These threads are already in your collection.");setBusy(false);locked.current=false;return}
   setQueue(pending);setProgress({done:0,total:pending.length});
-  const logs=[];let imported=0;
+  const logs=[],failures=[];let imported=0;
   for(let i=0;i<pending.length;i++){
    if(controller.signal.aborted)break;
    const target=pending[i];
@@ -63,7 +63,7 @@ export default function RemoteImport({onImported,existing=[]}){
     logs.push({url:target,status:"Indexed "+parsed.reduce((n,t)=>n+t.posts.length,0)+" visible posts",error:false});
    }catch(e){
     if(controller.signal.aborted)break;
-    logs.push({url:target,status:e.message||"Import failed",error:true});
+    logs.push({url:target,status:e.message||"Import failed",error:true});failures.push(target);
    }
    setHistory([...logs]);
    setProgress({done:i+1,total:pending.length});
@@ -71,9 +71,9 @@ export default function RemoteImport({onImported,existing=[]}){
    // Be polite to public archives and avoid hammering source servers.
    if(i+1<pending.length&&!controller.signal.aborted)await new Promise(r=>setTimeout(r,850));
   }
-  const remaining=controller.signal.aborted?pending.slice(logs.length):[];
+  const remaining=[...new Set([...failures,...(controller.signal.aborted?pending.slice(logs.length):[])])];
   setQueue(remaining);
-  setMessage((controller.signal.aborted?"Import paused. ":"Batch complete. ")+imported+" new thread(s) indexed. "+skipped+" already known. Imported posts are saved locally.");
+  setMessage((controller.signal.aborted?"Import paused. ":"Batch complete. ")+imported+" new thread(s) indexed. "+skipped+" already known. "+remaining.length+" unfinished/failed URL(s) preserved for retry.");
   locked.current=false;abort.current=null;setBusy(false);
  }
  async function discover(indexURL=url){
