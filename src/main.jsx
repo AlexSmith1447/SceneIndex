@@ -4,6 +4,7 @@ import {Search,Disc3,Archive,Upload,Heart,Bookmark,MessageSquare,ArrowRight,Chev
 import {starterThreads,artistCatalog,archives} from "./catalog.js";
 import PortalHome,{PortalAside,PortalHeaderArt} from "./PortalHome.jsx";
 import RemoteImport from "./RemoteImport.jsx";
+import ArchivePackages from "./ArchivePackages.jsx";
 import {searchThreads,bestSnippet,findArtists,threadArtists,buildGraph,discover,similarAuthors,stats,normalize,configureExtraArtists} from "./engine.js";
 import {loadThreads,saveThread,deleteThread,readPref,writePref,exportArchive} from "./storage.js";
 import {parseHTML,parseJSON,parseManual,parseArtistCSV} from "./importers.js";
@@ -107,8 +108,9 @@ function ImportPage({threads,onImported,onDelete,onOpen,onTasteImport,onExport})
   try{for(const thread of parseManual({title,source,sourceUrl:url,board,raw:text,date}))await onImported(thread);setNotice("Thread added to the local archive.");setText("")}
   catch(e){setNotice("Import error: "+e.message)}finally{setBusy(false)}
  }
- return <div><PageTrail items={["Import desk"]}/><div className="si-section-title"><div><h1>The import desk</h1><p>Bring old forum threads into your personal, searchable collection.</p></div><Badge tone="orange">LOCAL ARCHIVE</Badge></div>
+ return <div><PageTrail items={["Import desk"]}/><div className="si-section-title"><div><h1>The import desk</h1><p>Find downloadable collections, import preserved forum dumps, or index individual threads.</p></div><Badge tone="orange">LOCAL ARCHIVE</Badge></div>
   <div className="si-notice"><Info size={17}/><span>Imports are saved in this browser's IndexedDB. They are not uploaded to a server or automatically shared. Only import content you have permission to preserve, and keep original source links when possible.</span></div>
+  <ArchivePackages onImported={onImported}/>
   <RemoteImport onImported={onImported} existing={threads}/>
   <Pane label="CHOOSE IMPORT METHOD" icon={FileUp}><div className="si-import-tabs">{[["html","Saved forum HTML"],["json","SceneIndex JSON"],["manual","Paste a thread"],["csv","Last.fm CSV"]].map(([k,label])=><button className={kind===k?"active":""} key={k} onClick={()=>{setKind(k);setNotice("")}}>{label}</button>)}</div>
    <div className="si-import-fields">
