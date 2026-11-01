@@ -11,6 +11,7 @@ import {parseHTML,parseJSON,parseManual,parseArtistCSV} from "./importers.js";
 import "./styles.css";
 import "./portal2009.css";
 import "./authentic2009.css";
+import "./forumRefinement.css";
 
 const categories=["All Boards","Music Discussion","Recommendations","Hardcore / Screamo","Pop Punk / Emo","Scene / Electronic","Imported discussions"];
 const colorFor=(name)=>["#507e90","#947a72","#6d7c98","#8d7964","#607a70","#957e91"][Array.from(name).reduce((n,c)=>n+c.charCodeAt(0),0)%6];
