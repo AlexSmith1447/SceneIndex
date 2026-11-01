@@ -29,6 +29,20 @@ try{
  console.log("THREAD_OK");
  await page.getByRole("button",{name:"Import",exact:true}).first().click();
  await page.locator(".si-import-tabs").waitFor({state:"visible"});
+ await page.locator(".si-packages").waitFor({state:"visible"});
+ await page.locator(".si-packages-search input").fill("emo forum");
+ await page.locator(".si-packages-search button").click();
+ await page.waitForTimeout(1500);
+ const archiveLookup=await page.locator(".si-package-count,.si-package-notice").first().textContent().catch(()=>"Archive search unavailable");
+ console.log("ARCHIVE_ITEM_LOOKUP",archiveLookup?.slice(0,170));
+ // Test an actual ZIP bundle, not just the presence of an upload button.
+ const {zipSync,strToU8}=await import("fflate");
+ const sample='<html><head><title>Test demo conversation</title></head><body><h1>Test demo conversation</h1><article class="message" data-author="FixtureUser"><time datetime="2008-06-10">June 10, 2008</time><div class="bbWrapper">This is a test archive entry discussing a demo from an imaginary forum.</div></article></body></html>';
+ const manifest=JSON.stringify({format:"sceneindex-bundle-v1",pages:[{filename:"pages/test.html",sourceUrl:"https://archive-fixture.example/threads/demo",source:"Isolated Browser Test",captureDate:"2019-01-01"}]});
+ const zip=zipSync({"pages/test.html":strToU8(sample),"sceneindex-manifest.json":strToU8(manifest)});
+ await page.locator(".si-package-upload input").setInputFiles({name:"test-archive.zip",mimeType:"application/zip",buffer:Buffer.from(zip)});
+ await page.locator(".si-package-notice").filter({hasText:"Indexed 1 thread"}).waitFor({state:"visible",timeout:13000});
+ console.log("ZIP_ARCHIVE_IMPORT_OK");
  await page.locator(".ap-remote-pane").waitFor({state:"visible"});
  console.log("IMPORT_OK");
  const rawProbe=await page.evaluate(async()=>{
