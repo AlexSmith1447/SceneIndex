@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import {starterThreads,artistCatalog} from "../src/catalog.js";
-import {findArtists,threadArtists,searchThreads,buildGraph,discover,similarAuthors,stats} from "../src/engine.js";
+import {findArtists,threadArtists,searchThreads,bestSnippet,buildGraph,discover,similarAuthors,stats} from "../src/engine.js";
 import {onRequestGet} from "../functions/api/lastfm.js";
 
 const seeded=starterThreads[0];
@@ -10,6 +10,10 @@ assert.ok(seeded.sourceUrl.startsWith("https://"));
 assert.ok(findArtists("I love Sky Eats Airplane and Breathe Carolina").includes("Sky Eats Airplane"));
 assert.ok(!findArtists("notforsky eats airplane").includes("Sky Eats Airplane"));
 assert.equal(searchThreads(starterThreads,{q:"The Medic Droid"}).length,1);
+assert.equal(searchThreads(starterThreads,{q:'"The Medic Droid"'}).length,1);
+assert.equal(searchThreads(starterThreads,{q:'"The Medic Droid" -sky'}).length,0);
+assert.equal(bestSnippet(starterThreads[0],'"The Medic Droid"').author,"minusxerø");
+assert.ok(bestSnippet(starterThreads[0],'"The Medic Droid"').text.includes("The Medic Droid"));
 assert.equal(searchThreads(starterThreads,{q:"random nonexistent musician"}).length,0);
 assert.ok(threadArtists(seeded).includes("Scary Kids Scaring Kids"));
 const graph=buildGraph(starterThreads);
