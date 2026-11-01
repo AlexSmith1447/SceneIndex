@@ -44,6 +44,15 @@ try{
  await page.locator(".ap-remote-actions button").first().click();
  const importStatus=await page.locator(".ap-remote-status").innerText({timeout:25000}).catch(()=>"No import status");
  console.log("IMPORT_URL_RESULT",importStatus);
+ const capturesProbe=await page.evaluate(async()=>{
+  try{
+    const u="https://www.lpassociation.com/forum/threads/saosin.22761/";
+    const r=await fetch("/api/archive?"+new URLSearchParams({mode:"captures",url:u}));
+    const data=await r.json();
+    return {status:r.status,count:data.captures?.length||0,error:data.error||null};
+  }catch(e){return {status:0,error:e.message}}
+ });
+ console.log("WAYBACK_PROBE",JSON.stringify(capturesProbe));
  if(importStatus.includes("Imported 1 thread"))console.log("IMPORT_URL_SUCCESS");
 
  if(!rawProbe.ok)console.log("ARCHIVE_PROXY_WARNING",rawProbe.error);
