@@ -27,7 +27,7 @@ export default function PortalHome({threads,onOpen,onNavigate,onArtist}){
  const render=(list)=>list.map(t=><article className="ap-story" key={t.id}>
   <button className="ap-story-title" onClick={()=>onOpen(t.id)}><span className="ap-story-icon"><MessageSquare size={13}/></span>{t.title}</button>
   <p>{(t.posts?.[0]?.text||"").slice(0,235)}{(t.posts?.[0]?.text||"").length>235?"…":""}</p>
-  <div className="ap-story-meta">by <b>{t.posts?.[0]?.author||"Unknown"}</b> on {t.date} <span>·</span> {t.source} <button onClick={()=>onOpen(t.id)}>{t.posts?.length||0} indexed {t.posts?.length===1?"post":"posts"} <MessageSquare size={11}/></button></div>
+  <div className="ap-story-meta">by <b>{t.posts?.[0]?.author||"Unknown"}</b> on {t.dateBasis==="unknown"?"undated":t.dateBasis==="capture"?"capture "+t.date:t.date} <span>·</span> {t.source} <button onClick={()=>onOpen(t.id)}>{t.posts?.length||0} indexed {t.posts?.length===1?"post":"posts"} <MessageSquare size={11}/></button></div>
  </article>);
  return <div className="ap-home">
   <div className="ap-home-intro"><span><b>⌂</b> SceneIndex.net</span><span>Welcome to the old music internet. <button onClick={()=>onNavigate("import")}>Contribute an archive <ArrowRight size={11}/></button></span></div>
