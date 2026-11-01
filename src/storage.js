@@ -19,10 +19,17 @@ async function transaction(mode,action){
   });
 }
 export async function loadThreads(){
-  try {
-    const imported=await transaction("readonly",(s,resolve,reject)=>{const r=s.getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
-    return [...starterThreads,...imported.filter(t=>!starterThreads.some(s=>s.id===t.id))];
-  }catch(e){console.warn("SceneIndex local archive unavailable",e);return starterThreads}
+  const [local,shared]=await Promise.all([
+    transaction("readonly",(s,resolve,reject)=>{const r=s.getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)}).catch(()=>[]),
+    fetch("/api/library?mode=recent&limit=100").then(r=>r.ok?r.json():null).then(d=>d?.configured&&Array.isArray(d.threads)?d.threads:[]).catch(()=>[])
+  ]);
+  const seen=new Set(),all=[];
+  for(const t of [...starterThreads,...shared,...local]){
+    const identity=t.sourceUrl?String(t.sourceUrl).toLowerCase().replace(/\/+$/,""):t.id;
+    if(seen.has(identity))continue;
+    seen.add(identity);all.push(t);
+  }
+  return all;
 }
 export async function saveThread(thread){
   return transaction("readwrite",(s,resolve,reject)=>{const r=s.put(thread);r.onsuccess=()=>resolve(thread);r.onerror=()=>reject(r.error)});
@@ -34,6 +41,6 @@ export async function deleteThread(id){
 export const readPref=(key,fallback)=>{try{const data=JSON.parse(localStorage.getItem("si:"+key));return data??fallback}catch{return fallback}};
 export const writePref=(key,value)=>{try{localStorage.setItem("si:"+key,JSON.stringify(value))}catch{}};
 export function exportArchive(threads){
-  const result={format:"sceneindex-v1",exportedAt:new Date().toISOString(),threads:threads.filter(t=>t.origin!=="verified-paraphrase")};
+  const result={format:"sceneindex-v1",exportedAt:new Date().toISOString(),threads:threads.filter(t=>t.origin==="user-import")};
   return new Blob([JSON.stringify(result,null,2)],{type:"application/json"});
 }
