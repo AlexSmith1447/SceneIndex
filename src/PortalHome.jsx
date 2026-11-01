@@ -3,7 +3,7 @@ import {threadArtists,buildGraph,stats} from "./engine.js";
 
 const art={
  saosin:{src:"https://commons.wikimedia.org/wiki/Special:Redirect/file/Saosin_live_on_Projekt_Revolution_tour.jpg?width=460",credit:"Wikimedia Commons · 2007",page:"https://commons.wikimedia.org/wiki/File:Saosin_live_on_Projekt_Revolution_tour.jpg",artist:"Saosin"},
- tbs:{src:"https://commons.wikimedia.org/wiki/Special:Redirect/file/Taking_Back_Sunday_live_in_Boston.jpg?width=460",credit:"Debs · CC BY 2.0 · 2007",page:"https://commons.wikimedia.org/wiki/File:Taking_Back_Sunday_live_in_Boston.jpg",artist:"Taking Back Sunday"}
+ tbs:{src:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Taking_Back_Sunday_live_in_Boston.jpg/640px-Taking_Back_Sunday_live_in_Boston.jpg",credit:"Debs · CC BY 2.0 · 2007",page:"https://commons.wikimedia.org/wiki/File:Taking_Back_Sunday_live_in_Boston.jpg",artist:"Taking Back Sunday"}
 };
 function Picture({photo}){
  return <a className="ap-photo" href={photo.page} target="_blank" rel="noopener noreferrer" title={"Source: "+photo.credit}>
