@@ -10,9 +10,17 @@ export function findArtists(text) {
   return [...found.values()];
 }
 const key=a=>normalize(a);
-const words=text=>normalize(text).split(" ").filter(w=>w.length>=3);
+const tokens=text=>{
+  const results=[];
+  for(const match of String(text||"").matchAll(/(-?)"([^"]+)"|(-?)([^\s]+)/g)){
+    const negate=(match[1]||match[3])==="-";
+    const value=normalize(match[2]||match[4]||"");
+    if(value.length>=2)results.push({value,negate});
+  }
+  return results;
+};
 export function searchThreads(threads,{q="",source="all",year="all",tag="all",sort="relevance"}={}) {
-  const query=words(q);
+  const query=tokens(q);
   const results=[];
   for(const t of threads){
     if(source!=="all"&&t.source!==source)continue;
@@ -21,14 +29,16 @@ export function searchThreads(threads,{q="",source="all",year="all",tag="all",so
     const title=normalize(t.title),body=normalize((t.posts||[]).map(p=>p.text).join(" ")),tags=normalize((t.tags||[]).join(" ")),author=normalize((t.posts||[]).map(p=>p.author).join(" "));
     const artists=normalize(threadArtists(t).join(" "));
     let score=0,matched=true;
-    for(const w of query){
+    for(const {value:w,negate} of query){
       let termScore=0;
-      if(title.includes(w))termScore+=8;
-      if(tags.includes(w))termScore+=6;
-      if(artists.includes(w))termScore+=6;
-      if(author.includes(w))termScore+=3;
-      if(body.includes(w))termScore+=Math.min(4,1+body.split(w).length-2);
-      if(!termScore){matched=false;break}score+=termScore;
+      if(title.includes(w))termScore+=9;
+      if(tags.includes(w))termScore+=7;
+      if(artists.includes(w))termScore+=8;
+      if(author.includes(w))termScore+=4;
+      if(body.includes(w))termScore+=Math.min(5,1+body.split(w).length-2);
+      if(negate&&termScore){matched=false;break}
+      if(!negate&&!termScore){matched=false;break}
+      if(!negate)score+=termScore;
     }
     if(matched)results.push({...t,score});
   }
@@ -52,6 +62,13 @@ function userChoices(p){
   const positive=new Set(findArtists(stripped).map(key));
   return mentions.filter(a=>positive.has(key(a))&&!excluded.has(key(a)));
 }
+function artistLikes(p){
+  if(Array.isArray(p.likedArtists))return [...new Set(p.likedArtists.filter(Boolean))];
+  // Posting about a group, arguing about a group, and liking it are distinct.
+  // Don't manufacture preferences from ambiguous old discussions.
+  if(p.kind==="favorites")return userChoices(p);
+  return [];
+}
 export function buildGraph(threads) {
   const edges=new Map(),mentionCounts=new Map(),authors=new Map();
   const add=(a,b,weight,evidence,kind)=>{
@@ -63,17 +80,20 @@ export function buildGraph(threads) {
     edges.set(edgeKey,entry);
   };
   for(const thread of threads){
-    const byPost=(thread.posts||[]).map(p=>({...p,artists:userChoices(p)}));
+    const byPost=(thread.posts||[]).map(p=>({...p,artists:userChoices(p),likes:artistLikes(p)}));
     const requested=[...new Set(byPost.filter(p=>p.kind==="request").flatMap(p=>p.artists))];
     for(const p of byPost){
       for(const a of p.artists)mentionCounts.set(key(a),(mentionCounts.get(key(a))||0)+1);
       const authorKey=thread.source+"::"+(p.author||"unknown").toLowerCase();
       const profile=authors.get(authorKey)||{id:authorKey,name:p.author||"unknown",source:thread.source,artists:new Map(),threads:new Set()};
-      for(const a of p.artists)profile.artists.set(a,(profile.artists.get(a)||0)+1);
+      for(const a of p.likes)profile.artists.set(a,(profile.artists.get(a)||0)+1);
       profile.threads.add(thread.id);
       authors.set(authorKey,profile);
       const evidence={threadId:thread.id,thread:thread.title,source:thread.source,url:thread.sourceUrl,postId:p.id,author:p.author,date:p.date,origin:thread.origin};
-      for(let i=0;i<p.artists.length;i++)for(let j=i+1;j<p.artists.length;j++)add(p.artists[i],p.artists[j],.35,evidence,"co-mentioned");
+      // Large discography/list posts are much weaker similarity evidence.
+      const n=p.artists.length;
+      const weight=n>8?.035:n>4?.12:.3;
+      if(n<=22)for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)add(p.artists[i],p.artists[j],weight,evidence,"co-mentioned");
       if(p.kind==="recommendation"&&requested.length){
         for(const recommendation of explicitRecommendations(p))for(const prompt of requested)add(prompt,recommendation,4,evidence,"recommended");
       }
@@ -93,7 +113,7 @@ export function discover(threads,liked=[],limit=30) {
     row.evidence.push(...edge.evidence);
     found.set(k,row);
   }
-  return [...found.values()].map(r=>({...r,matchedWith:[...new Set(r.matchedWith)],evidence:r.evidence.filter((v,i,a)=>a.findIndex(x=>x.threadId===v.threadId&&x.postId===v.postId&&x.kind===v.kind)===i)})).sort((a,b)=>b.score-a.score).slice(0,limit);
+  return [...found.values()].map(r=>({...r,explicitCount:r.evidence.filter(x=>x.kind==="recommended").length,matchedWith:[...new Set(r.matchedWith)],evidence:r.evidence.filter((v,i,a)=>a.findIndex(x=>x.threadId===v.threadId&&x.postId===v.postId&&x.kind===v.kind)===i)})).sort((a,b)=>b.score-a.score).slice(0,limit);
 }
 export function similarAuthors(threads,liked=[],limit=20) {
   const wanted=new Set(liked.map(key));
