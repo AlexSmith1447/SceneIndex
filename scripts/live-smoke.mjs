@@ -110,7 +110,16 @@ try{
  console.log("ORIGINAL_SOEMO_IMPORT_OK");
  await page.getByRole("button",{name:"Communities",exact:true}).first().click();
  await page.locator(".si-community-row").filter({hasText:"soEmo.co.uk"}).click();
+ await page.waitForTimeout(500);
  const newSoemoCount=await page.locator(".si-community-thread-list button").count();
+ const savedRecord=await page.evaluate(()=>new Promise((resolve)=>{
+  const r=indexedDB.open("sceneindex-archive",1);r.onsuccess=()=>{
+   const db=r.result;const t=db.transaction("threads","readonly").objectStore("threads").getAll();
+   t.onsuccess=()=>resolve(t.result.map(x=>({id:x.id,source:x.source,title:x.title,url:x.sourceUrl,posts:x.posts?.length,firstAuthor:x.posts?.[0]?.author})).slice(0,15));
+   t.onerror=()=>resolve("db read failed")
+  };r.onerror=()=>resolve("db open failed")
+ }));
+ console.log("SOEMO_INDEX_DEBUG",JSON.stringify({newSoemoCount,savedRecord,community:await page.locator(".si-community-detail h2").textContent()}));
  if(newSoemoCount!==5)throw Error("Imported soEmo topic did not appear in its native community: "+newSoemoCount);
  await page.locator(".si-community-thread-list button").filter({hasText:"Black Veil Brides"}).click();
  const firstUser=await page.locator(".si-post-user > strong").first().textContent();
