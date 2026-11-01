@@ -41,8 +41,8 @@ export default function RemoteImport({onImported,existing=[]}){
   if(locked.current||!input.length){setMessage("No thread URLs are queued.");return}
   locked.current=true;setBusy(true);setHistory([]);setMessage("");
   const controller=new AbortController();abort.current=controller;
-  const unique=[...new Set(input.map(normalizeURLForDedupe))].filter(x=>x&&/^https?:/.test(x)).slice(0,40);
-  const pending=unique.filter(x=>!known.current.has(x));
+  const unique=[...new Map(input.filter(x=>/^https?:/.test(x)).map(x=>[normalizeURLForDedupe(x),x])).values()].slice(0,40);
+  const pending=unique.filter(x=>!known.current.has(normalizeURLForDedupe(x)));
   const skipped=unique.length-pending.length;
   if(!pending.length){setMessage("These threads are already in your collection.");setBusy(false);locked.current=false;return}
   setQueue(pending);setProgress({done:0,total:pending.length});
