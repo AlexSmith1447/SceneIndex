@@ -16,5 +16,7 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Check search and recommendation logic
         run: npm test
+      - name: Validate database migration and full-text search
+        run: python3 scripts/test-schema.py
       - name: Build
         run: npm run build
