@@ -4,7 +4,7 @@ const json=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:
 const cap=(raw,min,max,fallback)=>{const n=Number(raw);return Number.isSafeInteger(n)&&n>=min&&n<=max?n:fallback};
 const mapThread=(row,posts)=>({
  id:row.id,sourceUrl:row.source_url,title:row.title,source:row.source,board:row.board,
- date:row.thread_date,year:row.year,origin:row.origin,excerptOnly:!!row.excerpt_only,
+ date:row.thread_date,year:row.year,origin:"shared",dataOrigin:row.origin,excerptOnly:!!row.excerpt_only,
  captureUrl:row.capture_url||null,tags:JSON.parse(row.tags_json||"[]"),
  posts:posts.filter(p=>p.thread_id===row.id).map(p=>({
   id:p.id,author:p.author,date:p.post_date,text:p.body,kind:p.kind,
