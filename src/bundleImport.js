@@ -40,7 +40,7 @@ export async function parseArchiveBundle(file,{sourceName=""}={}){
    const canonical=doc?.querySelector('link[rel="canonical"]')?.getAttribute("href")||doc?.querySelector('meta[property="og:url"]')?.getAttribute("content")||"";
    const sourceUrl=info.sourceUrl||canonical||"";
    const captureUrl=info.captureUrl||"";
-   const parsed=name.toLowerCase().endsWith(".json")?parseJSON(raw):parseHTML(raw,{source:info.source||sourceName||metadata.source||file.name,sourceUrl,captureUrl});
+   const parsed=name.toLowerCase().endsWith(".json")?parseJSON(raw):parseHTML(raw,{source:info.source||sourceName||metadata.source||file.name,sourceUrl,captureUrl,captureDate:info.captureDate||null});
    for(const t of parsed){
     // File-hash identity makes archives repeat-importable without random duplicates.
     if(!t.sourceUrl)t.id="bundle-"+hash(name+"::"+raw.slice(0,20000));
