@@ -3,6 +3,10 @@ import {starterThreads,artistCatalog} from "../src/catalog.js";
 import {findArtists,threadArtists,searchThreads,bestSnippet,buildGraph,discover,similarAuthors,stats} from "../src/engine.js";
 import {onRequestGet} from "../functions/api/lastfm.js";
 import {onRequestGet as archiveRequest} from "../functions/api/archive.js";
+import {canonicalThreadURL,normalizeURLForDedupe} from "../src/harvest.js";
+import {onRequestGet as libraryRequest} from "../functions/api/library.js";
+import {onRequestPost as publishRequest} from "../functions/api/publish.js";
+
 
 const seeded=starterThreads[0];
 assert.equal(seeded.posts.length,2);
@@ -69,4 +73,15 @@ try{
  assert.equal((await captures.json()).captures[0].date,"2008-12-31");
  assert.ok(fetched.startsWith("https://web.archive.org/cdx/search/cdx"));
 }finally{globalThis.fetch=originalArchiveFetch}
-console.log("SceneIndex engine, archive safety and Last.fm proxy tests passed.");
+const liveUrl="https://www.lpassociation.com/forum/threads/saosin.22761/";
+const capture="https://web.archive.org/web/20080918140000id_/http://www.lpassociation.com/forum/threads/saosin.22761/";
+assert.equal(canonicalThreadURL(liveUrl,liveUrl),liveUrl);
+assert.equal(normalizeURLForDedupe(capture),liveUrl);
+assert.equal(canonicalThreadURL("https://example.com/forum/threads/saosin.22761/","https://example.com"),null);
+let lib=await libraryRequest({request:new Request("https://scene.test/api/library?mode=recent"),env:{}});
+assert.equal((await lib.json()).configured,false);
+let pub=await publishRequest({request:new Request("https://scene.test/api/publish",{method:"POST",headers:{"authorization":"Bearer wrong"},body:"{}"}),env:{SCENE_DB:{},SCENE_ADMIN_TOKEN:"secret"}});
+assert.equal(pub.status,401);
+pub=await publishRequest({request:new Request("https://scene.test/api/publish",{method:"POST",headers:{"authorization":"Bearer secret"},body:JSON.stringify({reviewed:false,thread:{}})}),env:{SCENE_DB:{},SCENE_ADMIN_TOKEN:"secret"}});
+assert.equal(pub.status,400);
+console.log("SceneIndex search, heritage import and optional D1 tests passed.");
