@@ -47,6 +47,27 @@ export function searchThreads(threads,{q="",source="all",year="all",tag="all",so
   else results.sort((a,b)=>b.score-a.score||b.date.localeCompare(a.date));
   return results;
 }
+export function bestSnippet(thread,q,max=215){
+ const positive=tokens(q).filter(t=>!t.negate).map(t=>t.value);
+ const posts=thread.posts||[];
+ let best=posts[0]||{text:"",author:""};
+ if(positive.length){
+  let bestScore=-1;
+  for(const post of posts){
+   const n=normalize(post.text||"");
+   const score=positive.reduce((sum,t)=>sum+(n.includes(t)?t.length+3:0),0);
+   if(score>bestScore){bestScore=score;best=post}
+  }
+ }
+ const body=String(best.text||"");
+ if(body.length<=max)return {text:body,author:best.author||"Unknown"};
+ const lower=body.toLowerCase();
+ let at=-1;
+ for(const token of positive){const idx=lower.indexOf(token);if(idx>=0&&(at<0||idx<at))at=idx}
+ const start=Math.max(0,at>=0?at-60:0);
+ const end=Math.min(body.length,start+max);
+ return {text:(start?"…":"")+body.slice(start,end).trim()+(end<body.length?"…":""),author:best.author||"Unknown"};
+}
 export const threadArtists=t=>[...new Set((t.posts||[]).flatMap(p=>findArtists(p.text||"")))];
 function explicitRecommendations(p){
   if(Array.isArray(p.recommended))return p.recommended;
