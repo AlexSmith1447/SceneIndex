@@ -12,6 +12,11 @@ export function canonicalThreadURL(raw,base){
    if(!match)return null;
    origin=new URL(match[1]+href.search);
   }
+  if(/^(?:www\.)?soemo\.co\.uk$/i.test(origin.hostname)){
+   if(!/^\/forums\/topic\.php$/i.test(origin.pathname))return null;
+   const id=origin.searchParams.get("id")||"";
+   return /^\d{1,12}$/.test(id)?"https://www.soemo.co.uk/forums/topic.php?id="+id:null;
+  }
   if(!/^(?:www\.)?lpassociation\.com$|^(?:forum\.)?chorus\.fm$|^www\.chorus\.fm$/i.test(origin.hostname))return null;
   const match=origin.pathname.match(/\/(?:forum\/)?threads\/([a-z0-9-]+)\.(\d+)(?:\/|$)/i);
   if(!match)return null;
