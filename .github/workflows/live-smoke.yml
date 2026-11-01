@@ -1,0 +1,25 @@
+name: Live site smoke test
+on:
+  push:
+    paths:
+      - .github/workflows/live-smoke.yml
+  workflow_dispatch:
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check live URL and historical UI
+        run: |
+          set -e
+          curl --fail --location --retry 3 --max-time 30 --silent --show-error https://sceneindex.pages.dev/ -o /tmp/sceneindex.html
+          grep -q 'SceneIndex' /tmp/sceneindex.html
+          echo 'LIVE_HTTP_OK'
+          echo "CHROME_PATH=$(command -v google-chrome || true)"
+          google-chrome --headless=new --no-sandbox --disable-dev-shm-usage --hide-scrollbars --disable-gpu --window-size=1365,900 --virtual-time-budget=14000 --screenshot=/tmp/sceneindex.png https://sceneindex.pages.dev/ > /tmp/chrome.log 2>&1
+          test -s /tmp/sceneindex.png
+          python3 - <<'PY'
+          import base64
+          print('SCENEIMAGE_START')
+          print(base64.b64encode(open('/tmp/sceneindex.png','rb').read()).decode())
+          print('SCENEIMAGE_END')
+          PY
