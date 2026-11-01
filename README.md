@@ -8,7 +8,7 @@ A late-2000s-style forum archive and music-discovery engine. Built separately fr
 - Full-text search across locally indexed threads, with source, year, tag and sort filters.
 - Music taste crate: manually enter artists, import a scrobble CSV or optionally use Last.fm recent top artists.
 - Explainable music recommendations and forum-author taste overlaps: derived from **real imported conversation evidence**, distinguishing mentions, requests and explicit recommendations.
-- Import HTML saved from XenForo, vBulletin, phpBB and Invision boards, SceneIndex JSON, or manually formatted posts; export your local imports.
+- Forum index scanning and selectable, locally resumable import queues (up to 40 thread requests per run); HTML/JSON/manual/CSV imports and JSON backups.
 - Eleven source-linked **2006–2009** LP Association threads are preloaded, shown as clearly marked paraphrases (not verbatim historical messages).
 - Local persistence using IndexedDB (threads) and localStorage (music crate and bookmarks).
 
@@ -44,14 +44,16 @@ Then redeploy. The browser never sees that key. Check `/api/lastfm?status=1` for
 
 ## Importing old forums
 
-**Live URL importing is now available.** On the Import page, paste a public LP Association or Chorus thread URL and click **Import this URL**. The deployed Cloudflare Pages Function fetches allowed source HTML and the browser parses posts, saving to IndexedDB. Up to 12 URLs can be processed in a user-initiated batch. The **Find Wayback captures** button queries the public Internet Archive CDX index where available; snapshot access is dependent on archive availability, rights, and rate limits. Unsupported direct hosts are deliberately blocked instead of turning SceneIndex into an arbitrary URL proxy. Saved HTML imports work as a fallback.
+**Archive Harvester v2 is available.** On the Import page, use **Single URL** to fetch an allowed public forum thread, or **Discover threads** to scan a board/index page for actual linked discussions. Select links, add them to a locally saved queue, and run or resume the import queue. Up to 40 thread URLs can be processed per run with throttling; unprocessed URLs remain stored locally. Processing does not continue when the import page is closed.
+
+The **Find Wayback captures** button queries the Internet Archive CDX index, letting you scan historic index snapshots and fetch actual captured discussions where available. Source sites may deny requests or have gaps. The URL proxy is restricted; the site does not indiscriminately crawl the web. Old posting dates and capture dates are differentiated, and undated content is marked unverified.
 
 1. Save a publicly accessible forum thread as **HTML** with your browser and import that file. HTML extraction is best-effort and targets common markup used by XenForo, vBulletin, phpBB and Invision; different skins may need a site-specific parser.
 2. Or use **Paste a thread**: write messages as `Username: message` and separate each reply with a standalone `---` line.
 3. SceneIndex builds an index of recognizable artist names, text, usernames, dates, tags and source references.
 4. Export your personal collection as JSON so it can be backed up or imported on another device.
 
-The import process occurs **in your browser**. It does **not** automatically fetch any remote URL or crawl entire forums yet. Your database is not synchronized across devices. Importing a URL alone is not sufficient: use a saved HTML file, JSON or pasted text.
+The parsing and personal storage happen **in your browser**. A restricted Cloudflare Pages Function can retrieve supported public URLs and archive snapshots on request; the browser doesn't crawl an entire site automatically. Imported discussions are **local and private to that browser**, unless you separately review and publish them to the optional shared database.
 
 ## Recommendation model
 
@@ -84,10 +86,10 @@ The interface takes broad visual inspiration from the user's 2009 AbsolutePunk s
 
 ## Future expansion
 
-- Cloudflare D1 for a shared, cross-device searchable index, with authorization and provenance checks.
+- Optional Cloudflare D1 integration is now implemented in code (migrations, read-only browsing and FTS5 search, review-gated admin publishing). It requires the owner's Cloudflare binding and secret setup before becoming operational; see [Archive 2.0 operator guide](docs/ARCHIVE_2_0.md).
 - Worker/Queue-based ingestion of explicitly permitted public archives, with per-source parsers, deduplication and resumable jobs.
 - MusicBrainz artist identity resolution and broader alias management.
-- A full-text index (SQLite FTS5 on D1), ranking and recommendation network with more real evidence.
+- Integrated pagination and full-scale UI search over a very large D1 corpus, richer artist identity resolution and more real recommendation evidence.
 - Collections that produce shareable web URLs rather than only local downloads.
 - Separate authentic vBulletin, phpBB and Invision period themes.
 
