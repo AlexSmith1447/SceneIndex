@@ -3,7 +3,7 @@ import {Link2,Search,Archive,Download,Plus,CheckCircle,AlertTriangle,Pause,Play,
 import {parseHTML} from "./importers.js";
 import {canonicalThreadURL,discoverThreadLinks,defaultKeywords,normalizeURLForDedupe} from "./harvest.js";
 
-const guessName=url=>url.includes("lpassociation.com")?"LP Association Forums":url.includes("chorus.fm")?"Chorus Forums":"Archived forum";
+const guessName=url=>url.includes("lpassociation.com")?"LP Association Forums":url.includes("soemo.co.uk")?"soEmo.co.uk":url.includes("chorus.fm")?"Chorus.fm Forums":"Archived forum";
 const QUEUE_KEY="si:harvest-v2";
 function parseURLs(raw){return [...new Set(raw.split(/\s+/).map(s=>s.trim()).filter(s=>/^https?:\/\//i.test(s)))].slice(0,40)}
 async function api(mode,url,signal){
