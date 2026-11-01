@@ -10,9 +10,17 @@ try{
  await page.locator(".ap-home-intro").waitFor({state:"visible",timeout:20000});
  if((await page.locator(".ap-story").count())<11)throw Error("Expected eleven sourced historical discussions");
  await page.setViewportSize({width:1758,height:990});
- const wideLayout=await page.evaluate(()=>({viewport:innerWidth,width:Math.round(document.querySelector(".si-grid").getBoundingClientRect().width),horizontal:document.documentElement.scrollWidth}));
+ // Cloudflare deployment follows the GitHub push asynchronously. Avoid testing an older version.
+ let wideLayout;
+ for(let attempt=0;attempt<24;attempt++){
+  wideLayout=await page.evaluate(()=>({viewport:innerWidth,width:Math.round(document.querySelector(".si-grid").getBoundingClientRect().width),horizontal:document.documentElement.scrollWidth,hasToggle:!!document.querySelector(".si-width-choice")}));
+  if(wideLayout.width>=1350&&wideLayout.hasToggle)break;
+  await page.waitForTimeout(5000);
+  await page.reload({waitUntil:"domcontentloaded",timeout:25000});
+  await page.locator(".ap-home-intro").waitFor({state:"visible",timeout:13000});
+ }
  console.log("WIDE_LAYOUT",JSON.stringify(wideLayout));
- if(wideLayout.width<1350)throw Error("Wide desktop layout did not expand enough");
+ if(wideLayout.width<1350)throw Error("New wide-site release was not observed after the deployment window");
  if(wideLayout.horizontal>wideLayout.viewport+8)throw Error("Wide desktop layout overflowed horizontally");
  await page.locator(".si-width-choice").click();
  const classicLayout=await page.evaluate(()=>Math.round(document.querySelector(".si-grid").getBoundingClientRect().width));
