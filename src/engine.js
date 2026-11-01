@@ -2,7 +2,19 @@ import {artistCatalog} from "./catalog.js";
 
 export const clean=(v)=>String(v??"").trim();
 export const normalize=(v)=>clean(v).toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").trim();
-const matcher=artistCatalog.flatMap(a=>[a.name,...a.aliases].filter(x=>x.length>=3).map(alias=>({a,alias:normalize(alias)}))).sort((a,b)=>b.alias.length-a.alias.length);
+let matcher=[];
+export function configureExtraArtists(names=[]){
+ const extras=[...new Set((Array.isArray(names)?names:[]).filter(x=>typeof x==="string").map(x=>x.trim()).filter(x=>x.length>=3&&x.length<=100))].slice(0,500).map(name=>({name,aliases:[]}));
+ const registry=new Map();
+ for(const artist of [...artistCatalog,...extras]){
+  const k=normalize(artist.name);
+  if(!registry.has(k))registry.set(k,{name:artist.name,aliases:new Set()});
+  for(const alias of artist.aliases||[])registry.get(k).aliases.add(alias);
+ }
+ matcher=[...registry.values()].flatMap(a=>[a.name,...a.aliases].map(alias=>({a,alias:normalize(alias)})).filter(x=>x.alias.length>=3)).sort((a,b)=>b.alias.length-a.alias.length);
+ return registry.size;
+}
+configureExtraArtists();
 export function findArtists(text) {
   const s=" "+normalize(text)+" ";
   const found=new Map();
