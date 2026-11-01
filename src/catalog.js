@@ -94,7 +94,7 @@ export const artistCatalog = [
   ["BrokeNCYDE",["broken cyde"],"crunkcore","2006–"],
   ["Kill Hannah",[],"alternative rock","1993–"],
   ["Fall Out Boy",["fob"],"pop-punk / emo","2001–"],
-  ["I Am Ghost",[],"post-hardcore","2004–2010"],
+  ["I Am Ghost",[],"gothic / theatrical post-hardcore","2004–2010"],
   ["Dear Whoever",[],"post-hardcore","2004–"],
   ["Aiden",[],"post-hardcore","2003–"],
   ["Saosin",[],"post-hardcore","2003–"],
