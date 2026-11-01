@@ -13,14 +13,14 @@ try{
  // Cloudflare deployment follows the GitHub push asynchronously. Avoid testing an older version.
  let wideLayout;
  for(let attempt=0;attempt<24;attempt++){
-  wideLayout=await page.evaluate(()=>({viewport:innerWidth,width:Math.round(document.querySelector(".si-grid").getBoundingClientRect().width),horizontal:document.documentElement.scrollWidth,hasToggle:!!document.querySelector(".si-width-choice")}));
-  if(wideLayout.width>=1350&&wideLayout.hasToggle)break;
+  wideLayout=await page.evaluate(()=>({viewport:innerWidth,width:Math.round(document.querySelector(".si-grid").getBoundingClientRect().width),horizontal:document.documentElement.scrollWidth,hasToggle:!!document.querySelector(".si-width-choice"),siteBuild:document.querySelector(".si-app")?.dataset.siteBuild||null}));
+  if(wideLayout.width>=1350&&wideLayout.hasToggle&&wideLayout.siteBuild==="forum-wide-20261101-v2")break;
   await page.waitForTimeout(5000);
   await page.reload({waitUntil:"domcontentloaded",timeout:25000});
   await page.locator(".ap-home-intro").waitFor({state:"visible",timeout:13000});
  }
  console.log("WIDE_LAYOUT",JSON.stringify(wideLayout));
- if(wideLayout.width<1350)throw Error("New wide-site release was not observed after the deployment window");
+ if(wideLayout.width<1350||wideLayout.siteBuild!=="forum-wide-20261101-v2")throw Error("Complete wide-site release was not observed after the deployment window");
  if(wideLayout.horizontal>wideLayout.viewport+8)throw Error("Wide desktop layout overflowed horizontally");
  await page.locator(".si-width-choice").click();
  const classicLayout=await page.evaluate(()=>Math.round(document.querySelector(".si-grid").getBoundingClientRect().width));
