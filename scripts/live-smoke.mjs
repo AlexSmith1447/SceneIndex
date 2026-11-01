@@ -102,7 +102,23 @@ try{
    return {status:r.status,title:doc.title,bytes:j.bytes,tags,sample};
   }catch(e){return {status:0,error:e.message}}
  });
- console.log("SOEMO_ORIGINAL_HTML",JSON.stringify(soemoProbe).slice(0,8500));
+ console.log("SOEMO_ORIGINAL_HTML",JSON.stringify(soemoProbe).slice(0,500));
+ if(soemoProbe.status!==200)throw Error("Original soEmo forum proxy was not accessible");
+ await page.locator(".ap-remote-pane textarea").fill("https://www.soemo.co.uk/forums/topic.php?id=2802648");
+ await page.locator(".ap-remote-actions button").first().click();
+ await page.locator(".ap-remote-status").filter({hasText:"1 new thread(s) indexed"}).waitFor({state:"visible",timeout:27000});
+ console.log("ORIGINAL_SOEMO_IMPORT_OK");
+ await page.getByRole("button",{name:"Communities",exact:true}).first().click();
+ await page.locator(".si-community-row").filter({hasText:"soEmo.co.uk"}).click();
+ const newSoemoCount=await page.locator(".si-community-thread-list button").count();
+ if(newSoemoCount!==5)throw Error("Imported soEmo topic did not appear in its native community: "+newSoemoCount);
+ await page.locator(".si-community-thread-list button").filter({hasText:"Black Veil Brides"}).click();
+ const firstUser=await page.locator(".si-post-user > strong").first().textContent();
+ if(!firstUser||firstUser==="Unknown")throw Error("soEmo imported original author was not extracted");
+ console.log("SOEMO_AUTHOR_POSTS_OK",firstUser);
+ await page.getByRole("button",{name:"Import",exact:true}).first().click();
+ await page.locator(".ap-remote-pane textarea").waitFor({state:"visible"});
+
 
  const rawProbe=await page.evaluate(async()=>{
    const target="https://www.lpassociation.com/forum/threads/saosin.22761/";
