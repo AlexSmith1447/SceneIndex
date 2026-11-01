@@ -30,6 +30,15 @@ try{
  const restored=await page.evaluate(()=>Math.round(document.querySelector(".si-grid").getBoundingClientRect().width));
  if(restored<1350)throw Error("Wide layout toggle did not restore full width");
  console.log("WIDTH_PREFERENCE_OK");
+ const recommendations=await page.locator(".si-source-rec > div > button:first-child").allTextContents();
+ if(new Set(recommendations).size!==recommendations.length)throw Error("Repeated duplicate recommendation artists in sidebar");
+ console.log("DEDUPED_RECOMMENDATIONS_OK",recommendations.length);
+ await page.locator(".ap-year-index button").filter({hasText:"2008"}).click();
+ await page.locator(".si-filters select").nth(1).waitFor({state:"visible"});
+ const selectedYear=await page.locator(".si-filters select").nth(1).inputValue();
+ if(selectedYear!=="2008")throw Error("Browse by Year link failed to apply selected year: "+selectedYear);
+ console.log("YEAR_FILTER_OK",selectedYear);
+
  await page.screenshot({path:"/tmp/sceneindex-home.jpg",type:"jpeg",quality:83,fullPage:false});
  console.log("HOME_OK",await page.locator(".ap-story").count());
  await page.getByRole("button",{name:"Search",exact:true}).first().click();
