@@ -4,7 +4,7 @@ import {Search,Disc3,Archive,Upload,Heart,Bookmark,MessageSquare,ArrowRight,Chev
 import {starterThreads,artistCatalog,archives} from "./catalog.js";
 import PortalHome,{PortalAside,PortalHeaderArt} from "./PortalHome.jsx";
 import RemoteImport from "./RemoteImport.jsx";
-import {searchThreads,bestSnippet,findArtists,threadArtists,buildGraph,discover,similarAuthors,stats,normalize} from "./engine.js";
+import {searchThreads,bestSnippet,findArtists,threadArtists,buildGraph,discover,similarAuthors,stats,normalize,configureExtraArtists} from "./engine.js";
 import {loadThreads,saveThread,deleteThread,readPref,writePref,exportArchive} from "./storage.js";
 import {parseHTML,parseJSON,parseManual,parseArtistCSV} from "./importers.js";
 import "./styles.css";
@@ -67,7 +67,7 @@ function DiscoverPage({threads,artists,onArtist,onOpen,onAddArtist,onRemoveArtis
  const people=useMemo(()=>similarAuthors(eraThreads,artists),[eraThreads,artists]);
  const submit=e=>{e.preventDefault();if(add.trim())onAddArtist(add.trim());setAdd("")};
  return <div><PageTrail items={["Discovery engine"]}/><div className="si-section-title"><div><h1>Music discovery lab</h1><p>Forum recommendations, shared tastes and connections. Every result links to evidence.</p></div><Badge tone="mint">ENGINE v0.1</Badge></div>
-  <Pane label="YOUR MUSIC TASTE" icon={Headphones}><div className="si-taste"><p>Choose artists you like, or import a Last.fm CSV. Only recognized mentions and relationships in the archive influence the results.</p><div className="si-taste-tags">{artists.map(a=><button key={a} onClick={()=>onRemoveArtist(a)} title={"Remove "+a}>{a} <X size={12}/></button>)}</div><form onSubmit={submit}><input value={add} onChange={e=>setAdd(e.target.value)} placeholder="Add an artist you listen to…" aria-label="Add favorite artist"/><button className="si-button primary"><Plus size={14}/> Add artist</button></form><div className="si-suggested">Try an evidence-backed example: <button onClick={()=>onAddArtist("Sky Eats Airplane")}>Sky Eats Airplane</button><button onClick={()=>onAddArtist("Breathe Carolina")}>Breathe Carolina</button></div></div></Pane>
+  <Pane label="YOUR MUSIC TASTE" icon={Headphones}><div className="si-taste"><p>Choose artists you like, or import a Last.fm CSV. Adding an artist also teaches the local index to recognize its name in imported conversations. Source-linked relationships, not genre guesses, influence results.</p><div className="si-taste-tags">{artists.map(a=><button key={a} onClick={()=>onRemoveArtist(a)} title={"Remove "+a}>{a} <X size={12}/></button>)}</div><form onSubmit={submit}><input value={add} onChange={e=>setAdd(e.target.value)} placeholder="Add an artist you listen to…" aria-label="Add favorite artist"/><button className="si-button primary"><Plus size={14}/> Add artist</button></form><div className="si-suggested">Try an evidence-backed example: <button onClick={()=>onAddArtist("Sky Eats Airplane")}>Sky Eats Airplane</button><button onClick={()=>onAddArtist("Breathe Carolina")}>Breathe Carolina</button></div></div></Pane>
   <div className="si-era-filter"><label htmlFor="si-era-select">DISCOVERY ERA</label><select id="si-era-select" value={era} onChange={e=>setEra(e.target.value)}><option value="all">All indexed years</option>{years.map(y=><option key={y} value={String(y)}>{y} only</option>)}</select><span>Results use original discussion dates, not album release years.</span></div>
   <div className="si-section-small"><strong><Disc3 size={16}/> Music you might have missed</strong><span>{recommendations.length} supported suggestions</span></div>
   <div className="si-recommendation-list">{recommendations.map((r,i)=><div className="si-rec" key={r.name}><span className="si-rec-rank">{String(i+1).padStart(2,"0")}</span><div><button className="si-rec-title" onClick={()=>onArtist(r.name)}>{r.name} <ArrowRight size={14}/></button><p>Related to {r.matchedWith.join(", ")}</p><small>{r.explicitCount||0} direct recommendation {(r.explicitCount||0)===1?"entry":"entries"} · {r.evidence.length} total source-linked relationships</small>
@@ -145,7 +145,7 @@ function ArtistPage({artist,threads,onBack,onOpen,onAddArtist,onFind}){
 function App(){
  const [threads,setThreads]=useState(starterThreads),[loading,setLoading]=useState(true);
  const [page,setPage]=useState("home"),[activeThread,setActiveThread]=useState(null),[artist,setArtist]=useState(""),[searchTerm,setSearchTerm]=useState("");
- const [topSearch,setTopSearch]=useState(""),[favorites,setFavorites]=useState(()=>readPref("favorites",[]));
+ const [topSearch,setTopSearch]=useState(""),[favorites,setFavorites]=useState(()=>{const artists=readPref("favorites",[]);configureExtraArtists(artists);return artists});
  const [saved,setSaved]=useState(()=>readPref("saved",[])),[menu,setMenu]=useState(false),[lastfm,setLastfm]=useState(()=>readPref("lastfm",""));
  const [fmBusy,setFmBusy]=useState(false),[fmStatus,setFmStatus]=useState("");
  useEffect(()=>{loadThreads().then(t=>setThreads(t)).finally(()=>setLoading(false))},[]);
@@ -157,12 +157,12 @@ function App(){
  useEffect(()=>{if(!loading){const id=new URLSearchParams(location.search).get("thread");if(id&&threads.some(t=>t.id===id)){setActiveThread(id);setPage("thread")}}},[loading]);
  const openArtist=a=>{setArtist(a);navigate("artist")};
  const runSearch=e=>{e.preventDefault();setSearchTerm(topSearch.trim());navigate("search")};
- const addArtist=a=>setFavorites(old=>old.some(x=>normalize(x)===normalize(a))?old:[...old,a].slice(0,200));
- const removeArtist=a=>setFavorites(old=>old.filter(x=>normalize(x)!==normalize(a)));
+ const addArtist=a=>setFavorites(old=>{const next=old.some(x=>normalize(x)===normalize(a))?old:[...old,a].slice(0,500);configureExtraArtists(next);return next});
+ const removeArtist=a=>setFavorites(old=>{const next=old.filter(x=>normalize(x)!==normalize(a));configureExtraArtists(next);return next});
  const imported=async t=>{await saveThread(t);setThreads(old=>[...old.filter(x=>x.id!==t.id),t]);};
  const remove=async id=>{await deleteThread(id);setThreads(old=>old.filter(t=>t.id!==id))};
  const exportData=()=>{const blob=exportArchive(threads),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="SceneIndex-archive.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
- const csvAdded=artists=>{setFavorites(old=>[...new Set([...old,...artists])].slice(0,500))};
+ const csvAdded=artists=>{setFavorites(old=>{const next=[...new Set([...old,...artists])].slice(0,500);configureExtraArtists(next);return next})};
  async function fetchLastfm(e){
   e.preventDefault();if(!lastfm.trim())return;setFmStatus("");setFmBusy(true);
   try{const r=await fetch("/api/lastfm?"+new URLSearchParams({user:lastfm.trim(),mode:"top"}));const j=await r.json();if(!r.ok)throw Error(j.error||"Last.fm unavailable");csvAdded(j.artists.map(x=>x.name));setFmStatus("Added "+j.artists.length+" recent top artists to your local taste profile.")}
