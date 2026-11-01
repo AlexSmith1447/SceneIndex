@@ -31,6 +31,17 @@ try{
  await page.locator(".si-import-tabs").waitFor({state:"visible"});
  await page.locator(".ap-remote-pane").waitFor({state:"visible"});
  console.log("IMPORT_OK");
+ const rawProbe=await page.evaluate(async()=>{
+   const target="https://www.lpassociation.com/forum/threads/saosin.22761/";
+   try {
+     const r=await fetch("/api/archive?"+new URLSearchParams({mode:"fetch",url:target}));
+     const j=await r.json();
+     return {ok:r.ok,status:r.status,bytes:j.bytes||0,error:j.error||null,hasSaosin:!!j.html?.includes("Saosin")};
+   }catch(e){return {ok:false,status:0,error:e.message}}
+ });
+ console.log("ARCHIVE_PROXY_PROBE",JSON.stringify(rawProbe));
+ if(!rawProbe.ok)console.log("ARCHIVE_PROXY_WARNING",rawProbe.error);
+
  if(faults.length)throw Error("Frontend exceptions: "+faults.join(" | "));
  console.log("NO_JS_ERRORS");
 }catch(error){console.error(error);console.error("BROWSER_FAULTS",JSON.stringify(faults));process.exitCode=1}
