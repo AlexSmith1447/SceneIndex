@@ -7,7 +7,7 @@ const coreThreads = [
     title:"Electronica/Emo-Screamo", board:"Other Music", year:2008, date:"2008-05-29",
     origin:"verified-paraphrase", excerptOnly:true, tags:["electronicore","emo","screamo","recommendations"],
     posts:[
-      {id:"lpa-p1",author:"Daniel",date:"2008-05-29",role:"LPA Super Member",text:"Looking for new music similar to My Darkest Hour-era Scary Kids Scaring Kids, Sky Eats Airplane, Breathe Carolina, and Forever the Sickest Kids, especially emo with keyboards. Explicitly does not want BrokeNCYDE or Kill Hannah.",kind:"request",origin:"paraphrase"},
+      {id:"lpa-p1",author:"Daniel",date:"2008-05-29",role:"LPA Super Member",text:"Looking for new music similar to My Darkest Hour-era Scary Kids Scaring Kids, Sky Eats Airplane, Breathe Carolina, and Forever the Sickest Kids, especially emo with keyboards. Explicitly does not want BrokeNCYDE or Kill Hannah.",kind:"request",origin:"paraphrase",likedArtists:["Scary Kids Scaring Kids","Sky Eats Airplane","Breathe Carolina","Forever the Sickest Kids"]},
       {id:"lpa-p2",author:"minusxerø",date:"2008-05-29",role:"LPA Addicted VIP",text:"Has seen Breathe Carolina live and thinks they're alright. Recommends The Medic Droid.",kind:"recommendation",origin:"paraphrase"}
     ]
   },
