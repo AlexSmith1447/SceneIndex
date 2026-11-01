@@ -1,5 +1,6 @@
 import React from "react";
 import {threadArtists,buildGraph,stats} from "./engine.js";
+import {communities,sceneSections,matchCommunity} from "./communities.js";
 
 const art={
  saosin:{src:"https://commons.wikimedia.org/wiki/Special:Redirect/file/Saosin_live_on_Projekt_Revolution_tour.jpg?width=460",credit:"Wikimedia Commons · 2007",page:"https://commons.wikimedia.org/wiki/File:Saosin_live_on_Projekt_Revolution_tour.jpg",artist:"Saosin"},
@@ -55,7 +56,7 @@ function Listing({threads,onOpen}){
  </article>)}
  </div>
 }
-export default function PortalHome({threads,onOpen,onNavigate,onArtist,onYear}){
+export default function PortalHome({threads,onOpen,onNavigate,onArtist,onYear,onScene,onCommunity}){
  const ordered=[...threads].sort((a,b)=>(isKnownDate(b)?b.date:"0000").localeCompare(isKnownDate(a)?a.date:"0000"));
  const sources=[...new Set(ordered.map(t=>t.source))];
  const years=[...new Set(ordered.filter(isKnownDate).map(t=>t.year))].sort((a,b)=>b-a);
@@ -65,12 +66,19 @@ export default function PortalHome({threads,onOpen,onNavigate,onArtist,onYear}){
   <div className="ap-home-intro"><strong>SceneIndex.net</strong><span>Forum index &gt; Music discussion</span><button onClick={()=>onNavigate("search")}>Search archive »</button></div>
   <div className="ap-home-grid">
    <aside className="ap-left">
-    <Box title="Forum Directory"><div className="ap-directory">{sources.map(source=><button key={source} onClick={()=>onNavigate("sources")}><b>▣</b><span>{source}</span><small>{threads.filter(t=>t.source===source).length}</small></button>)}</div></Box>
+    <Box title="Browse Music Scenes"><div className="ap-directory ap-scene-directory">{sceneSections.map(section=><button key={section.id} onClick={()=>onScene(section.id)}><b>▣</b><span>{section.name}</span><small>{communities.filter(c=>c.scenes.includes(section.id)).length}</small></button>)}</div></Box>
     <Box title="Browse by Year"><div className="ap-year-index">{years.map(y=><button key={y} onClick={()=>onYear(y)}>{y}<small>{threads.filter(t=>t.year===y).length} threads</small></button>)}</div></Box>
     <Box title="Live Archives"><Picture photo={art.saosin}/><div className="ap-photo-credits">Saosin, 2007 · <a href={art.saosin.page} target="_blank" rel="noopener noreferrer">Photo source</a></div><button className="ap-feature-name" onClick={()=>onArtist("Saosin")}>View Saosin discussions »</button></Box>
     <Box title="Tools"><div className="ap-side-links"><button onClick={()=>onNavigate("import")}>Import an existing archive</button><button onClick={()=>onNavigate("discover")}>Compare music taste</button><button onClick={()=>onNavigate("search")}>Search all threads</button></div></Box>
    </aside>
    <div className="ap-center">
+    <Box title="Historical Communities" extra={<button className="ap-head-action" onClick={()=>onNavigate("sources")}>Complete directory »</button>}>
+     <div className="ap-community-preview">{["soemo","absolutepunk","vampirefreaks","makeoutclub","lpa","chorus","emowire","stereokiller"].map(id=>{
+      const item=communities.find(c=>c.id===id);if(!item)return null;
+      const count=threads.filter(t=>matchCommunity(t.source)===id).length;
+      return <button key={id} onClick={()=>onCommunity(id)}><strong>{item.name}</strong><small>{item.era} · {item.kind}</small><span>{count?count+" indexed":"Record only"}</span></button>
+     })}</div>
+    </Box>
     <Box title="Forum Discussions" extra={<button className="ap-head-action" onClick={()=>onNavigate("search")}>Advanced Search »</button>}>
       <Listing threads={ordered.slice(0,60)} onOpen={onOpen}/>
     </Box>
