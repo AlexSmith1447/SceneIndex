@@ -23,7 +23,7 @@ function validate(raw){
     captureUrl:validURL(obj.captureUrl)||null,dateBasis:obj.dateBasis==="capture"?"capture":"post",
     tags:(Array.isArray(obj.tags)?obj.tags:[]).map(x=>slug(x)).filter(Boolean).slice(0,15),
     posts:p.slice(0,250).map((post,i)=>({
-      id:"p-"+(i+1),author:clamp(post.author||"Unknown",70),date:dateish(post.date)||date,role:clamp(post.role||"Member",70),
+      id:"p-"+(i+1),author:clamp(post.author||"Unknown",70),date:dateish(post.date)||(obj.dateBasis==="capture"?null:date),role:clamp(post.role||"Member",70),
       text:clamp(post.text,12000),kind:["discussion","request","recommendation"].includes(post.kind)?post.kind:postKind(post.text||""),
       origin:"user-import",excluded:Array.isArray(post.excluded)?post.excluded.slice(0,20):[],
       likedArtists:Array.isArray(post.likedArtists)?post.likedArtists.slice(0,30):undefined,
