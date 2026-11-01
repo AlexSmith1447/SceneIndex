@@ -1,0 +1,168 @@
+/* SceneIndex proportional/typographic correction, November 2026.
+   On a modern desktop: wide forum reading space with period-correct chrome.
+   Original ~1000px proportions remain available via the Classic width switch. */
+body{background:linear-gradient(#f8f8f8,#e7e7e7 480px) fixed}
+.si-app{background:transparent;font:12px/1.4 Arial,Helvetica,sans-serif}
+.si-container{width:min(1480px,calc(100% - 64px));max-width:none;padding-left:0;padding-right:0}
+.si-header{min-height:104px}
+.si-header-inner{min-height:104px}
+.si-brand{gap:12px}
+.si-brand-icon{height:54px;width:49px;font-size:22px}
+.si-brand strong{font-size:32px;letter-spacing:-1px}
+.si-brand small{font-size:11px;line-height:1.4;letter-spacing:.3px}
+.si-site-mast{max-width:440px;margin-left:auto;text-align:right;padding:11px 0 7px;border-top:3px solid #76353d;border-bottom:1px solid #c9c0c1}
+.si-site-mast-title{font:bold 13px/1.5 Arial;color:#77373e;letter-spacing:.15px}
+.si-site-mast-links{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:9px;color:#777;font:11px/1.5 Arial;margin-top:4px}
+.si-site-mast-links span+span:before{content:"·";margin-right:9px;color:#8d6d70}
+.si-nav-inner{min-height:33px;padding:0 6px}
+.si-nav nav button{height:31px;padding:0 16px;font:700 12px Arial}
+.si-nav nav button svg{width:13px;height:13px}
+.si-header-search{height:25px;flex:0 1 275px;max-width:275px;min-width:100px;margin-left:auto}
+.si-header-search input{font-size:11px}
+.si-header-search svg{height:14px;width:14px}
+.si-width-choice{flex:0 0 auto;border:1px solid #a47176;background:#eee3e4;color:#60262e;font:10px/1 Arial;padding:5px 8px;margin:0 2px 0 8px;white-space:nowrap}
+.si-width-choice:hover{background:#fff}
+.si-grid{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:12px;padding:11px;background:#fafafa;border:1px solid #bebebe;min-width:0}
+.si-main{min-width:0}
+.ap-home-intro{padding:9px 12px;min-height:33px;font-size:12px;margin-bottom:10px}
+.ap-home-intro strong{font-size:12px}
+.ap-home-intro button{font-size:11px}
+.ap-home-grid{display:grid;grid-template-columns:205px minmax(0,1fr);gap:12px;align-items:start}
+.ap-left,.ap-center{min-width:0}
+.ap-box,.si-pane{border-color:#b5b5b5;margin-bottom:12px}
+.ap-head,.si-pane-head{min-height:27px;padding:6px 9px;font:700 12px/1.25 Arial;background:#742e36}
+.ap-head-action{font-size:11px}
+.ap-thread-columns{font:700 11px Arial;padding:8px 10px}
+.ap-home .ap-center .ap-thread-columns{grid-template-columns:minmax(0,1fr) 61px 105px!important;padding:8px 10px!important}
+.ap-home .ap-center .ap-story{grid-template-columns:minmax(0,1fr) 61px 105px!important}
+.ap-home .ap-center .ap-story-title-row{padding:11px 10px!important;gap:9px}
+.ap-home .ap-center .ap-story-title{font:700 13px/1.4 Arial!important}
+.ap-home .ap-center .ap-story-description{font:12px/1.5 Arial!important;color:#494949!important;margin:5px 0!important;-webkit-line-clamp:2}
+.ap-home .ap-center .ap-story-sourceline{font:10.5px/1.4 Arial!important;color:#7b7b7b!important}
+.ap-home .ap-center .ap-story-replies{font:11px Arial}
+.ap-home .ap-center .ap-story-date{font:11px/1.35 Arial}
+.ap-thread-forum{flex-basis:21px;height:21px;font-size:14px}
+.ap-directory,.ap-year-index{padding:6px}
+.ap-home .ap-left .ap-directory button,.ap-home .ap-left .ap-year-index button{padding:8px 5px;font:12px/1.4 Arial}
+.ap-directory button small,.ap-year-index button small{font-size:11px}
+.ap-home .ap-left .ap-year-index button small{white-space:nowrap}
+.ap-photo{height:185px;margin:8px 8px 3px}
+.ap-photo-credits{font-size:10px}
+.ap-feature-name{font-size:11px;padding:7px 6px}
+.ap-side-links{padding:8px}
+.ap-side-links button{font-size:12px;padding:9px 3px}
+.ap-side-plain{font-size:11px;margin-top:4px;padding:8px 9px}
+.ap-authentic-rec-list>div{padding:11px 9px;font-size:11px}
+.ap-authentic-rec-list button{font-size:12px}
+.ap-authentic-rec-list span{font-size:11px}
+.ap-bottom-note{font-size:10px;padding:12px 7px;line-height:1.5}
+.si-artist-rank{padding:4px 7px}
+.si-rank-head{display:flex;justify-content:space-between;background:#eee;border-bottom:1px solid #cacaca;padding:6px 5px;color:#666;font:bold 10px Arial}
+.si-artist-rank>button{display:flex;width:100%;align-items:center;gap:7px;text-align:left;padding:8px 5px;border:0;border-bottom:1px dotted #d5d5d5;background:#fff;font:11px Arial;color:#6c2c34}
+.si-artist-rank>button:hover{background:#f9f0f0;text-decoration:underline}
+.si-artist-rank>button strong{flex:1;min-width:0;font-size:11.5px;font-weight:400;overflow-wrap:anywhere}
+.si-artist-rank>button small{font:11px Arial;color:#666}
+.si-rank-number{color:#999;min-width:19px;font-size:10px}
+.si-source-rec{padding:5px 8px}
+.si-source-rec>div{display:grid;gap:3px;padding:8px 3px;border-bottom:1px dotted #d4d4d4}
+.si-source-rec button{border:0;background:none;color:#672e36;text-align:left;text-decoration:underline;font:700 11.5px Arial;padding:0}
+.si-source-rec small{font:11px/1.4 Arial;color:#555}
+.si-source-rec span{font:10px Arial;color:#888}
+.si-sidebar{gap:12px}
+.si-sidebar .si-pane{margin:0}
+.si-sidebar-content{padding:11px 12px!important}
+.si-sidebar-count{font:bold 24px Arial;gap:10px}
+.si-sidebar-count span{font:11px Arial}
+.si-sidebar-link{font-size:11px;padding:9px 0 3px}
+.si-sidebar-stats{padding:6px 12px}
+.si-sidebar-stats>div{padding:9px 0;font-size:12px}
+.si-sidebar-tags{padding:10px}
+.si-sidebar-tags button{font:11px Arial;padding:5px 7px}
+.si-sidebar-tags button small{color:#8b6970}
+.si-listening-details{margin-top:11px;border-top:1px dotted #c6c6c6;padding-top:9px}
+.si-listening-details summary{cursor:pointer;color:#6c323a;text-decoration:underline;font-size:11px}
+.si-listening-details form{margin-top:12px}
+.si-listening-details input{margin-top:4px}
+.si-listening-details small{display:block;margin-top:6px;font:10px/1.5 Arial;color:#8b8b8b}
+.si-source-warning{font-size:11px!important;line-height:1.5}
+.si-section-title{margin-top:4px;padding:5px 4px 15px}
+.si-section-title h1{font-size:24px}
+.si-section-title p{font-size:12px}
+.si-trail{font-size:11px;padding:7px 3px 13px}
+.si-trail button{font-size:11px}
+.si-thread-row{padding:12px 10px;gap:10px}
+.si-thread-details strong{font-size:13px}
+.si-thread-details small{font-size:11px}
+.si-thread-excerpt{font-size:11px}
+.si-thread-meta strong{font-size:15px}
+.si-post-body p{font-size:13px;line-height:1.7}
+.si-post-user strong{font-size:12px}
+.si-post-user small{font-size:11px}
+.si-rec p,.si-taste>p,.si-feature-panel p{font-size:12px}
+.si-filters label{font-size:11px}
+.si-artist-banner h1{font-size:23px}
+.si-footer{max-width:1480px;width:calc(100% - 64px);padding:14px 0;font-size:11px}
+.si-classic-width .si-container{max-width:none;width:min(1004px,calc(100% - 24px))}
+.si-classic-width .si-grid{grid-template-columns:minmax(0,1fr) 239px;gap:7px;padding:7px}
+.si-classic-width .ap-home-grid{grid-template-columns:173px minmax(0,1fr);gap:6px}
+.si-classic-width .si-header{min-height:84px}
+.si-classic-width .si-header-inner{min-height:84px}
+.si-classic-width .ap-home .ap-center .ap-story{grid-template-columns:minmax(0,1fr) 40px 74px!important}
+.si-classic-width .ap-home .ap-center .ap-thread-columns{grid-template-columns:minmax(0,1fr) 40px 74px!important}
+.si-classic-width .ap-home .ap-center .ap-story-description{font-size:11px!important}
+.si-classic-width .ap-home .ap-center .ap-story-title{font-size:11px!important}
+.si-classic-width .ap-home .ap-center .ap-story-title-row{padding:7px 5px!important}
+.si-classic-width .ap-home .ap-center .ap-story-sourceline{font-size:9px!important}
+.si-classic-width .si-sidebar .si-pane-head{font-size:10px}
+@media(min-width:1750px){.si-container{width:min(1570px,calc(100% - 160px))}.si-footer{max-width:1570px;width:calc(100% - 160px)}}
+@media(max-width:1140px){
+ .si-grid{grid-template-columns:minmax(0,1fr) 225px;gap:8px}
+ .ap-home-grid{grid-template-columns:175px minmax(0,1fr);gap:8px}
+ .si-container{width:calc(100% - 32px)}
+ .si-brand strong{font-size:26px}
+ .si-brand small{font-size:9px}
+ .si-width-choice{margin-left:4px}
+}
+@media(max-width:920px){
+ .si-grid,.si-classic-width .si-grid{display:block}
+ .si-sidebar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:12px}
+ .si-sidebar .ap-aside-top{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .si-header-search{flex:1 1 180px;max-width:240px}
+ .si-container{width:calc(100% - 24px)}
+}
+@media(max-width:680px){
+ .si-container,.si-classic-width .si-container{width:calc(100% - 16px)}
+ .si-nav nav button{height:35px}
+ .si-header{min-height:75px}
+ .si-header-inner{min-height:75px}
+ .si-brand strong{font-size:24px}
+ .si-site-mast{display:none}
+ .si-width-choice{display:none}
+ .si-nav-inner{min-height:35px}
+ .si-mobile-toggle{color:#fff;background:none;border:0}
+ .si-nav nav{top:110px;z-index:30}
+ .si-grid{padding:7px}
+ .si-sidebar .ap-aside-top{grid-column:1/-1}
+ .ap-home-grid,.si-classic-width .ap-home-grid{grid-template-columns:minmax(0,1fr)}
+ .ap-left{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+ .ap-left .ap-box:last-child{grid-column:1/-1}
+ .ap-photo{height:140px}
+ .ap-home .ap-center .ap-story{grid-template-columns:minmax(0,1fr) 42px 77px!important}
+ .ap-home .ap-center .ap-thread-columns{grid-template-columns:minmax(0,1fr) 42px 77px!important}
+ .si-sidebar{grid-template-columns:minmax(0,1fr)}
+ .si-sidebar .ap-aside-top{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:420px){
+ .si-nav nav{top:110px}
+ .si-brand-icon{height:40px;width:36px;font-size:16px}
+ .si-brand strong{font-size:22px}
+ .si-brand small{font-size:9px}
+ .ap-home .ap-center .ap-story{grid-template-columns:minmax(0,1fr) 33px 62px!important}
+ .ap-home .ap-center .ap-thread-columns{grid-template-columns:minmax(0,1fr) 33px 62px!important}
+ .ap-home .ap-center .ap-story-title-row{padding:9px 4px!important;gap:4px}
+ .ap-home .ap-center .ap-story-title{font-size:11.5px!important}
+ .ap-home .ap-center .ap-story-description{font-size:10.5px!important}
+ .ap-home .ap-center .ap-story-sourceline{font-size:9px!important}
+ .ap-home .ap-center .ap-story-date,.ap-home .ap-center .ap-story-replies{font-size:9px}
+ .ap-home-intro{flex-wrap:wrap}
+}
