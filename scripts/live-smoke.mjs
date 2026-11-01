@@ -64,7 +64,26 @@ try{
   }catch(e){return {status:0,error:e.message}}
  });
  console.log("WAYBACK_SNAPSHOT_FETCH",JSON.stringify(snapshotProbe));
- if(importStatus.includes("Imported 1 thread"))console.log("IMPORT_URL_SUCCESS");
+ if(importStatus.includes("1 new thread(s) indexed"))console.log("IMPORT_URL_SUCCESS");
+ if(!importStatus.includes("indexed"))throw Error("URL import failed: "+importStatus);
+ await page.getByRole("button",{name:"Discover threads",exact:true}).click();
+ await page.locator(".ap-remote-actions button").first().click();
+ await page.locator(".ap-remote-status").filter({hasText:"Found"}).waitFor({state:"visible",timeout:30000});
+ const discovered=await page.locator(".si-harvest-list label").count();
+ if(discovered<2)throw Error("Board scan produced too few indexed discussion links: "+discovered);
+ console.log("FORUM_INDEX_SCAN_OK",discovered);
+ await page.locator(".si-harvest-results-head button").first().click();
+ await page.locator(".si-harvest-bottom button").click();
+ await page.getByRole("button",{name:"Import queue",exact:true}).click();
+ const pending=await page.locator(".si-queue-preview>div").count();
+ if(!pending)throw Error("Archive queue was empty after adding discovered links");
+ console.log("QUEUE_CREATED_OK",pending);
+ await page.reload({waitUntil:"domcontentloaded"});
+ await page.getByRole("button",{name:"Import",exact:true}).first().click();
+ await page.getByRole("button",{name:"Import queue",exact:true}).click();
+ const resumed=await page.locator(".si-queue-preview>div").count();
+ if(!resumed)throw Error("Archive queue did not survive reload");
+ console.log("QUEUE_RESUME_OK",resumed);
 
  if(!rawProbe.ok)console.log("ARCHIVE_PROXY_WARNING",rawProbe.error);
 
