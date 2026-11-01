@@ -1,7 +1,7 @@
 // Public read-only historical forum lookup for approved live forums and Wayback captures.
 // No arbitrary target/proxying. Never forward cookies, credentials or headers from callers.
 // Availability of Wayback and source sites varies: errors are reported, not masked.
-const allowed=new Set(["www.lpassociation.com","lpassociation.com","forum.chorus.fm","www.chorus.fm","chorus.fm"]);
+const allowed=new Set(["www.lpassociation.com","lpassociation.com","forum.chorus.fm","www.chorus.fm","chorus.fm","www.soemo.co.uk","soemo.co.uk"]);
 const respond=(obj,status=200)=>new Response(JSON.stringify(obj),{status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"}});
 const parseOrigin=(raw)=>{
  try {
