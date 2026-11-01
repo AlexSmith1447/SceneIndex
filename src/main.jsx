@@ -45,9 +45,10 @@ function ThreadPage({thread,onBack,onArtist,onSave,saved}){
   <div className="si-bottom-nav"><button onClick={onBack}><ChevronLeft size={14}/> Back to forum</button>{thread.sourceUrl&&<a href={thread.sourceUrl} target="_blank" rel="noopener noreferrer">Read original discussion <ExternalLink size={13}/></a>}</div>
  </div>;
 }
-function SearchPage({threads,onOpen,onArtist,initialQuery=""}){
- const [q,setQ]=useState(initialQuery),[source,setSource]=useState("all"),[year,setYear]=useState("all"),[tag,setTag]=useState("all"),[sort,setSort]=useState("relevance");
+function SearchPage({threads,onOpen,onArtist,initialQuery="",initialYear="all"}){
+ const [q,setQ]=useState(initialQuery),[source,setSource]=useState("all"),[year,setYear]=useState(initialYear),[tag,setTag]=useState("all"),[sort,setSort]=useState("relevance");
  useEffect(()=>setQ(initialQuery),[initialQuery]);
+ useEffect(()=>setYear(initialYear),[initialYear]);
  const sources=[...new Set(threads.map(t=>t.source))].sort(),years=[...new Set(threads.map(t=>t.year).filter(y=>Number(y)>=1900))].sort((a,b)=>b-a),tags=[...new Set(threads.flatMap(t=>t.tags||[]))].sort();
  const results=useMemo(()=>searchThreads(threads,{q,source,year,tag,sort}),[threads,q,source,year,tag,sort]);
  return <div><PageTrail items={["Forum search"]}/><div className="si-section-title"><div><h1>Search the archives</h1><p>Search thread titles, posts, usernames and recognized artists.</p></div></div>
@@ -148,7 +149,7 @@ function ArtistPage({artist,threads,onBack,onOpen,onAddArtist,onFind}){
 }
 function App(){
  const [threads,setThreads]=useState(starterThreads),[loading,setLoading]=useState(true);
- const [page,setPage]=useState("home"),[activeThread,setActiveThread]=useState(null),[artist,setArtist]=useState(""),[searchTerm,setSearchTerm]=useState("");
+ const [page,setPage]=useState("home"),[activeThread,setActiveThread]=useState(null),[artist,setArtist]=useState(""),[searchTerm,setSearchTerm]=useState(""),[searchYear,setSearchYear]=useState("all");
  const [topSearch,setTopSearch]=useState(""),[favorites,setFavorites]=useState(()=>{const artists=readPref("favorites",[]);configureExtraArtists(artists);return artists});
  const [saved,setSaved]=useState(()=>readPref("saved",[])),[menu,setMenu]=useState(false),[lastfm,setLastfm]=useState(()=>readPref("lastfm",""));
  const [fmBusy,setFmBusy]=useState(false),[fmStatus,setFmStatus]=useState("");
@@ -158,7 +159,8 @@ function App(){
  useEffect(()=>writePref("saved",saved),[saved]);
  useEffect(()=>writePref("lastfm",lastfm),[lastfm]);
  useEffect(()=>writePref("classicWidth",classicWidth),[classicWidth]);
- const navigate=p=>{setPage(p);setMenu(false);window.scrollTo(0,0);history.replaceState({},"",location.pathname)};
+ const navigate=p=>{setPage(p);if(p==="search")setSearchYear("all");setMenu(false);window.scrollTo(0,0);history.replaceState({},"",location.pathname)};
+ const openYear=year=>{navigate("search");setSearchYear(String(year));setSearchTerm("");setTopSearch("")};
  const openThread=id=>{setActiveThread(id);setPage("thread");setMenu(false);window.scrollTo(0,0);history.replaceState({},"","?thread="+encodeURIComponent(id))};
  useEffect(()=>{if(!loading){const id=new URLSearchParams(location.search).get("thread");if(id&&threads.some(t=>t.id===id)){setActiveThread(id);setPage("thread")}}},[loading]);
  const openArtist=a=>{setArtist(a);navigate("artist")};
@@ -184,8 +186,8 @@ function App(){
   <div className="si-nav"><div className="si-container si-nav-inner"><button className="si-mobile-toggle" onClick={()=>setMenu(!menu)}><Menu size={17}/> Menu</button><nav className={menu?"open":""}>{items.map(([id,label,Icon])=><button key={id} className={page===id?"active":""} onClick={()=>navigate(id)}><Icon size={14}/>{label}</button>)}</nav><form onSubmit={runSearch} className="si-header-search"><Search size={14}/><input value={topSearch} onChange={e=>setTopSearch(e.target.value)} placeholder="Search bands, threads, people..." aria-label="Global search"/><button aria-label="Submit search"><ArrowRight size={14}/></button></form><button className="si-width-choice" onClick={()=>setClassicWidth(!classicWidth)} title={classicWidth?"Expand the forum layout":"View at the original fixed-width proportions"}>{classicWidth?"Wide layout":"Classic width"}</button></div></div>
   <div className="si-container si-grid">
    <main className="si-main">{loading?<div className="si-empty">Opening your local archive...</div>:
-    page==="home"?<PortalHome threads={threads} onOpen={openThread} onNavigate={navigate} onArtist={openArtist}/>:
-    page==="search"?<SearchPage threads={threads} initialQuery={searchTerm} onOpen={openThread} onArtist={openArtist}/>:
+    page==="home"?<PortalHome threads={threads} onOpen={openThread} onNavigate={navigate} onArtist={openArtist} onYear={openYear}/>:
+    page==="search"?<SearchPage threads={threads} initialQuery={searchTerm} initialYear={searchYear} onOpen={openThread} onArtist={openArtist}/>:
     page==="thread"?selectedThread?<ThreadPage thread={selectedThread} onBack={()=>navigate("home")} onArtist={openArtist} onSave={id=>setSaved(old=>old.includes(id)?old.filter(x=>x!==id):[...old,id])} saved={saved.includes(selectedThread.id)}/>:<div className="si-empty">Thread not found.</div>:
     page==="discover"?<DiscoverPage threads={threads} artists={favorites} onArtist={openArtist} onOpen={openThread} onAddArtist={addArtist} onRemoveArtist={removeArtist}/>:
     page==="sources"?<SourcesPage threads={threads} onOpen={openThread}/>:
@@ -194,7 +196,7 @@ function App(){
     page==="saved"?<div><PageTrail items={["Your saved threads"]}/><div className="si-section-title"><h1>Your saved threads</h1></div><Pane label="BOOKMARKS" icon={Bookmark}>{threads.filter(t=>saved.includes(t.id)).map(t=><ThreadRow key={t.id} thread={t} onOpen={openThread}/>)}</Pane></div>:null}
    </main>
    <aside className="si-sidebar">
-    {page==="home"&&<PortalAside onArtist={openArtist} onNavigate={navigate} threads={threads}/>}
+    {page==="home"&&<PortalAside onArtist={openArtist} onNavigate={navigate} onOpen={openThread} threads={threads}/>}
     <Pane label="MY MUSIC" icon={Headphones}><div className="si-sidebar-content"><div className="si-sidebar-count">{favorites.length}<span>artists in your collection</span></div><button className="si-sidebar-link" onClick={()=>navigate("discover")}>Find music from my taste <ChevronRight size={13}/></button><details className="si-listening-details"><summary>Import Last.fm listening history</summary><form className="si-lastfm" onSubmit={fetchLastfm}><label>Last.fm username<input value={lastfm} onChange={e=>setLastfm(e.target.value)} placeholder="username" aria-label="Last.fm username"/></label><button disabled={fmBusy} className="si-button small"><RefreshCw size={13}/>{fmBusy?"Loading":"Load recent top artists"}</button>{fmStatus&&<p className="si-fm-status">{fmStatus}</p>}<small>Requires a private API key configured in Cloudflare. CSV import is also available.</small></form></details></div></Pane>
     <Pane label="ARCHIVE AT A GLANCE" icon={Database}><div className="si-sidebar-stats">{Object.entries(stats(threads)).map(([name,value])=><div key={name}><span>{name}</span><strong>{value}</strong></div>)}</div></Pane>
     <Pane label="DISCUSSION TAGS" icon={Music2}><div className="si-sidebar-tags">{tagCounts.map(([tag,count])=><button key={tag} onClick={()=>onFind(tag)}>#{tag} <small>({count})</small></button>)}</div></Pane>
