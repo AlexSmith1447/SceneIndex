@@ -1,6 +1,7 @@
+import {extraThreads} from "./moreThreads.js";
 // SceneIndex's starter archive contains only source-grounded material.
 // Paraphrases are explicitly labeled; no fictional forum conversation is presented as real.
-export const starterThreads = [
+const coreThreads = [
   {
     id:"lpa-27909", source:"LP Association Forums", sourceUrl:"https://www.lpassociation.com/forum/threads/electronica-emo-screamo.27909/",
     title:"Electronica/Emo-Screamo", board:"Other Music", year:2008, date:"2008-05-29",
@@ -48,6 +49,8 @@ export const starterThreads = [
   }
 ];
 
+export const starterThreads=[...coreThreads,...extraThreads];
+
 export const artistCatalog = [
   ["Fugazi",[],"post-hardcore","1986–2003"],
   ["Finch",[],"post-hardcore","1999–"],
@@ -65,6 +68,17 @@ export const artistCatalog = [
   ["Funeral for a Friend",[],"post-hardcore","2001–"],
   ["Linkin Park",[],"alternative metal","1996–"],
   ["Breaking Benjamin",[],"alternative rock","1999–"],
+  ["Matchbook Romance",[],"emo / post-hardcore",""],
+  ["Mayday Parade",[],"emo / pop-punk",""],
+  ["Paramore",[],"pop-punk / alternative",""],
+  ["All Time Low",[],"pop-punk",""],
+  ["Atreyu",[],"metalcore / post-hardcore",""],
+  ["Dead Poetic",[],"post-hardcore",""],
+  ["AFI",[],"punk / alternative",""],
+  ["Enter Shikari",[],"electronicore / post-hardcore",""],
+  ["The Secret Handshake",[],"electropop / scene",""],
+  ["Alesana",[],"post-hardcore / screamo",""],
+  ["Attack Attack!",[],"electronicore",""],
   ["Sky Eats Airplane",["sea"],"electronicore","2005–2009"],
   ["Scary Kids Scaring Kids",["sksk"],"post-hardcore","2002–2010"],
   ["Breathe Carolina",[],"electronicore","2007–"],
