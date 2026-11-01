@@ -53,6 +53,12 @@ const coreThreads = [
 export const starterThreads=[...coreThreads,...extraThreads,...additionalForumThreads];
 
 export const artistCatalog = [
+  ["Mindless Self Indulgence",["MSI"],"industrial / electropunk","1997–"],
+  ["The Left Rights",[],"industrial / electronic",""],
+  ["Nine Inch Nails",["NIN"],"industrial rock","1988–"],
+  ["KMFDM",[],"industrial rock","1984–"],
+  ["The Smiths",[],"alternative / post-punk","1982–1987"],
+  ["Morrissey",[],"alternative rock","1988–"],
   ["Fugazi",[],"post-hardcore","1986–2003"],
   ["Finch",[],"post-hardcore","1999–"],
   ["Senses Fail",[],"post-hardcore","2002–"],
