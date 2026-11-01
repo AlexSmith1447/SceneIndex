@@ -7,10 +7,10 @@ page.on("pageerror",error=>faults.push(error.message));
 try{
  const response=await page.goto("https://sceneindex.pages.dev/",{waitUntil:"domcontentloaded",timeout:30000});
  if(!response.ok())throw Error("Site failed HTTP: "+response.status());
- await page.locator(".si-welcome h1").waitFor({state:"visible",timeout:20000});
- if((await page.locator(".si-thread-row").count())<5)throw Error("Expected five indexed historical threads");
+ await page.locator(".ap-home-intro").waitFor({state:"visible",timeout:20000});
+ if((await page.locator(".ap-story").count())<11)throw Error("Expected eleven sourced historical discussions");
  await page.screenshot({path:"/tmp/sceneindex-home.jpg",type:"jpeg",quality:83,fullPage:false});
- console.log("HOME_OK",await page.locator(".si-thread-row").count());
+ console.log("HOME_OK",await page.locator(".ap-story").count());
  await page.getByRole("button",{name:"Search",exact:true}).first().click();
  await page.locator(".si-wide-search input").waitFor({state:"visible"});
  await page.locator(".si-wide-search input").fill("Medic Droid");
@@ -29,6 +29,7 @@ try{
  console.log("THREAD_OK");
  await page.getByRole("button",{name:"Import",exact:true}).first().click();
  await page.locator(".si-import-tabs").waitFor({state:"visible"});
+ await page.locator(".ap-remote-pane").waitFor({state:"visible"});
  console.log("IMPORT_OK");
  if(faults.length)throw Error("Frontend exceptions: "+faults.join(" | "));
  console.log("NO_JS_ERRORS");
