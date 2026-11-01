@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import {starterThreads,artistCatalog} from "../src/catalog.js";
-import {findArtists,threadArtists,searchThreads,bestSnippet,buildGraph,discover,similarAuthors,stats} from "../src/engine.js";
+import {findArtists,threadArtists,searchThreads,bestSnippet,buildGraph,discover,similarAuthors,stats,configureExtraArtists} from "../src/engine.js";
 import {onRequestGet} from "../functions/api/lastfm.js";
 import {onRequestGet as archiveRequest} from "../functions/api/archive.js";
 import {canonicalThreadURL,normalizeURLForDedupe} from "../src/harvest.js";
@@ -14,6 +14,9 @@ assert.equal(seeded.origin,"verified-paraphrase");
 assert.ok(seeded.sourceUrl.startsWith("https://"));
 assert.ok(findArtists("I love Sky Eats Airplane and Breathe Carolina").includes("Sky Eats Airplane"));
 assert.ok(!findArtists("notforsky eats airplane").includes("Sky Eats Airplane"));
+configureExtraArtists(["A Whisper Between Stars"]);
+assert.ok(findArtists("fans recommend A Whisper Between Stars from 2008").includes("A Whisper Between Stars"));
+configureExtraArtists();
 assert.equal(searchThreads(starterThreads,{q:"The Medic Droid"}).length,1);
 assert.equal(searchThreads(starterThreads,{q:'"The Medic Droid"'}).length,1);
 assert.equal(searchThreads(starterThreads,{q:'"The Medic Droid" -sky'}).length,0);
