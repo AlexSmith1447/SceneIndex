@@ -5,6 +5,7 @@ import {starterThreads,artistCatalog,archives} from "./catalog.js";
 import PortalHome,{PortalAside,PortalHeaderArt} from "./PortalHome.jsx";
 import RemoteImport from "./RemoteImport.jsx";
 import ArchivePackages from "./ArchivePackages.jsx";
+import CommunityDirectory from "./CommunityDirectory.jsx";
 import {searchThreads,bestSnippet,findArtists,threadArtists,buildGraph,discover,similarAuthors,stats,normalize,configureExtraArtists} from "./engine.js";
 import {loadThreads,saveThread,deleteThread,readPref,writePref,exportArchive} from "./storage.js";
 import {parseHTML,parseJSON,parseManual,parseArtistCSV} from "./importers.js";
@@ -150,6 +151,7 @@ function ArtistPage({artist,threads,onBack,onOpen,onAddArtist,onFind}){
 function App(){
  const [threads,setThreads]=useState(starterThreads),[loading,setLoading]=useState(true);
  const [page,setPage]=useState("home"),[activeThread,setActiveThread]=useState(null),[artist,setArtist]=useState(""),[searchTerm,setSearchTerm]=useState(""),[searchYear,setSearchYear]=useState("all");
+ const [sourceScene,setSourceScene]=useState("all"),[sourceForum,setSourceForum]=useState(null);
  const [topSearch,setTopSearch]=useState(""),[favorites,setFavorites]=useState(()=>{const artists=readPref("favorites",[]);configureExtraArtists(artists);return artists});
  const [saved,setSaved]=useState(()=>readPref("saved",[])),[menu,setMenu]=useState(false),[lastfm,setLastfm]=useState(()=>readPref("lastfm",""));
  const [fmBusy,setFmBusy]=useState(false),[fmStatus,setFmStatus]=useState("");
@@ -161,6 +163,8 @@ function App(){
  useEffect(()=>writePref("classicWidth",classicWidth),[classicWidth]);
  const navigate=p=>{setPage(p);if(p==="search")setSearchYear("all");setMenu(false);window.scrollTo(0,0);history.replaceState({},"",location.pathname)};
  const openYear=year=>{navigate("search");setSearchYear(String(year));setSearchTerm("");setTopSearch("")};
+ const openScene=id=>{setSourceScene(id);setSourceForum(null);navigate("sources")};
+ const openCommunity=id=>{setSourceScene("all");setSourceForum(id);navigate("sources")};
  const openThread=id=>{setActiveThread(id);setPage("thread");setMenu(false);window.scrollTo(0,0);history.replaceState({},"","?thread="+encodeURIComponent(id))};
  useEffect(()=>{if(!loading){const id=new URLSearchParams(location.search).get("thread");if(id&&threads.some(t=>t.id===id)){setActiveThread(id);setPage("thread")}}},[loading]);
  const openArtist=a=>{setArtist(a);navigate("artist")};
@@ -179,18 +183,18 @@ function App(){
  const onFind=a=>{setTopSearch(a);setSearchTerm(a);navigate("search")};
  const selectedThread=threads.find(t=>t.id===activeThread);
  const tagCounts=Object.entries(threads.flatMap(t=>t.tags||[]).reduce((acc,tag)=>{acc[tag]=(acc[tag]||0)+1;return acc},{})).sort((a,b)=>b[1]-a[1]).slice(0,9);
- const items=[["home","Forums",MessageSquare],["search","Search",Search],["discover","Discover",Disc3],["sources","Sources",FolderOpen],["import","Import",Upload]];
+ const items=[["home","Forums",MessageSquare],["sources","Communities",FolderOpen],["search","Search",Search],["discover","Discover",Disc3],["import","Import",Upload]];
  return <div data-site-build="forum-wide-20261101-v2" className={"si-app"+(classicWidth?" si-classic-width":"")}>
   <div className="si-top-accent"/>
   <header className="si-header"><div className="si-container si-header-inner"><button className="si-brand" onClick={()=>navigate("home")}><span className="si-brand-icon">S<span>/</span>I</span><span><strong>SCENE<span>INDEX</span></strong><small>the scene music archive</small></span></button><PortalHeaderArt/></div></header>
   <div className="si-nav"><div className="si-container si-nav-inner"><button className="si-mobile-toggle" onClick={()=>setMenu(!menu)}><Menu size={17}/> Menu</button><nav className={menu?"open":""}>{items.map(([id,label,Icon])=><button key={id} className={page===id?"active":""} onClick={()=>navigate(id)}><Icon size={14}/>{label}</button>)}</nav><form onSubmit={runSearch} className="si-header-search"><Search size={14}/><input value={topSearch} onChange={e=>setTopSearch(e.target.value)} placeholder="Search bands, threads, people..." aria-label="Global search"/><button aria-label="Submit search"><ArrowRight size={14}/></button></form><button className="si-width-choice" onClick={()=>setClassicWidth(!classicWidth)} title={classicWidth?"Expand the forum layout":"View at the original fixed-width proportions"}>{classicWidth?"Wide layout":"Classic width"}</button></div></div>
   <div className="si-container si-grid">
    <main className="si-main">{loading?<div className="si-empty">Opening your local archive...</div>:
-    page==="home"?<PortalHome threads={threads} onOpen={openThread} onNavigate={navigate} onArtist={openArtist} onYear={openYear}/>:
+    page==="home"?<PortalHome threads={threads} onOpen={openThread} onNavigate={navigate} onArtist={openArtist} onYear={openYear} onScene={openScene} onCommunity={openCommunity}/>:
     page==="search"?<SearchPage threads={threads} initialQuery={searchTerm} initialYear={searchYear} onOpen={openThread} onArtist={openArtist}/>:
     page==="thread"?selectedThread?<ThreadPage thread={selectedThread} onBack={()=>navigate("home")} onArtist={openArtist} onSave={id=>setSaved(old=>old.includes(id)?old.filter(x=>x!==id):[...old,id])} saved={saved.includes(selectedThread.id)}/>:<div className="si-empty">Thread not found.</div>:
     page==="discover"?<DiscoverPage threads={threads} artists={favorites} onArtist={openArtist} onOpen={openThread} onAddArtist={addArtist} onRemoveArtist={removeArtist}/>:
-    page==="sources"?<SourcesPage threads={threads} onOpen={openThread}/>:
+    page==="sources"?<CommunityDirectory threads={threads} onOpen={openThread} onNavigate={navigate} initialScene={sourceScene} initialForum={sourceForum}/>:
     page==="import"?<ImportPage threads={threads} onImported={imported} onDelete={remove} onOpen={openThread} onTasteImport={csvAdded} onExport={exportData}/>:
     page==="artist"?<ArtistPage artist={artist} threads={threads} onBack={()=>navigate("home")} onOpen={openThread} onAddArtist={addArtist} onFind={onFind}/>:
     page==="saved"?<div><PageTrail items={["Your saved threads"]}/><div className="si-section-title"><h1>Your saved threads</h1></div><Pane label="BOOKMARKS" icon={Bookmark}>{threads.filter(t=>saved.includes(t.id)).map(t=><ThreadRow key={t.id} thread={t} onOpen={openThread}/>)}</Pane></div>:null}
