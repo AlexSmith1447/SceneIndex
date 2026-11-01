@@ -31,8 +31,8 @@ export async function onRequestPost({request,env}){
   if(found){skipped.push(sourceUrl);continue}
   const id=makeId(key),source=cut(t.source,120)||"Unknown source";
   const statements=[
-   env.SCENE_DB.prepare("INSERT OR IGNORE INTO archive_threads (id,source_url,title,source,board,thread_date,year,tags_json,origin,excerpt_only,capture_url) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
-     .bind(id,key,title,source,cut(t.board,80)||"Other Music",date,Number(date.slice(0,4)),JSON.stringify(strList(t.tags,15)),cut(t.origin,30)||"reviewed-import",t.excerptOnly?1:0,validUrl(t.captureUrl)?cut(t.captureUrl,1000):null)
+   env.SCENE_DB.prepare("INSERT OR IGNORE INTO archive_threads (id,source_url,title,source,board,thread_date,year,tags_json,origin,excerpt_only,capture_url,date_basis) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
+     .bind(id,key,title,source,cut(t.board,80)||"Other Music",date,Number(date.slice(0,4)),JSON.stringify(strList(t.tags,15)),cut(t.origin,30)||"reviewed-import",t.excerptOnly?1:0,validUrl(t.captureUrl)?cut(t.captureUrl,1000):null,["post","capture","unknown"].includes(t.dateBasis)?t.dateBasis:"post")
   ];
   for(let i=0;i<t.posts.length;i++){
    const p=t.posts[i],text=cut(p.text,10000),author=cut(p.author,80)||"Unknown",pDate=nameDate(p.date)?p.date:date;
