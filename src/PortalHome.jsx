@@ -13,21 +13,25 @@ function Picture({photo}){
 }
 function Box({title,children,extra}){return <section className="ap-box"><h2 className="ap-head"><span>{title}</span>{extra}</h2>{children}</section>}
 export function PortalHeaderArt(){
- return <div className="ap-header-strip">
-  <div className="ap-mast-pic ap-photo-mast"><span>Taking Back Sunday<br/>2007</span><img src={art.tbs.src} alt="Taking Back Sunday in 2007" onError={e=>e.currentTarget.style.display="none"}/></div>
-  <div className="ap-mast-pic"><img src={art.saosin.src} alt="Saosin in 2007" onError={e=>e.currentTarget.style.display="none"}/></div>
-  <div className="ap-mast-type"><strong>FORUM ARCHIVES</strong><span>Music discussion · 2000–2010</span><small>Source-linked historical conversations</small></div>
- </div>
+ return <div className="si-site-mast">
+  <div className="si-site-mast-title">MUSIC FORUMS / DISCUSSION ARCHIVES</div>
+  <div className="si-site-mast-links"><span>Original sources</span><span>Preserved conversations</span><span>Artist connections</span></div>
+ </div>;
 }
 export function PortalAside({onArtist,onNavigate,threads=[]}){
- const s=stats(threads);
+ const mentions=new Map();
+ for(const thread of threads){
+  for(const artist of threadArtists(thread)){
+   const current=mentions.get(artist)||{name:artist,threads:0};
+   current.threads++;mentions.set(artist,current);
+  }
+ }
+ const artists=[...mentions.values()].sort((a,b)=>b.threads-a.threads||a.name.localeCompare(b.name)).slice(0,12);
+ const graph=buildGraph(threads);
+ const suggestions=graph.edges.filter(e=>e.recommendationCount>0&&e.evidence.some(x=>x.kind==="recommended")).sort((a,b)=>b.recommendationCount-a.recommendationCount).slice(0,4);
  return <div className="ap-aside-top">
-  <Box title="Photo Archive">
-   <Picture photo={art.tbs}/>
-   <div className="ap-photo-credits">2007 · <a href={art.tbs.page} target="_blank" rel="noopener noreferrer">Debs (CC BY 2.0)</a></div>
-   <button className="ap-feature-name" onClick={()=>onArtist("Taking Back Sunday")}>Taking Back Sunday</button>
-  </Box>
-  <Box title="Archive Statistics"><div className="ap-archive-stats"><div><b>{s.threads}</b> indexed discussions</div><div><b>{s.posts}</b> preserved post excerpts</div><div><b>{s.sources}</b> source communities</div></div><button className="ap-side-plain" onClick={()=>onNavigate("sources")}>Browse sources »</button></Box>
+  <Box title="Artists Mentioned"><div className="si-artist-rank"><div className="si-rank-head"><span>Band / artist</span><span>Threads</span></div>{artists.map((a,i)=><button key={a.name} onClick={()=>onArtist(a.name)}><span className="si-rank-number">{i+1}.</span><strong>{a.name}</strong><small>{a.threads}</small></button>)}</div><button className="ap-side-plain" onClick={()=>onNavigate("search")}>Search the artist index »</button></Box>
+  {suggestions.length>0&&<Box title="Recommendations on Record"><div className="si-source-rec">{suggestions.map((e,i)=>{const ev=e.evidence.find(x=>x.kind==="recommended");return <div key={i}><button onClick={()=>onArtist(e.artists[1])}>{e.artists[1]}</button><small>Discussed with {e.artists[0]}</small><span>{ev?.date||"Forum recommendation"}</span></div>})}</div><button className="ap-side-plain" onClick={()=>onNavigate("discover")}>Compare your music taste »</button></Box>}
  </div>;
 }
 const isKnownDate=t=>t.dateBasis!=="unknown"&&Number(t.year)>=1900;
