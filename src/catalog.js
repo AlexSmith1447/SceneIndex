@@ -118,7 +118,7 @@ export const artistCatalog = [
 ].map(([name,aliases,genre,years])=>({name,aliases,genre,years}));
 
 export const archives=[
-  {name:"LP Association Forums",era:"2000s–present",description:"Music talk and surviving early-2000s forum threads",link:"https://www.lpassociation.com/forum/",status:"Five sourced threads indexed"},
+  {name:"LP Association Forums",era:"2000s–present",description:"Music talk and surviving early-2000s forum threads",link:"https://www.lpassociation.com/forum/",status:"Eleven sourced threads indexed"},
   {name:"AbsolutePunk",era:"2000–2016",description:"News, reviews and once-extensive emo/pop-punk forums",link:"https://chorus.fm/",status:"Source discovery planned"},
   {name:"Bridge 9 Board",era:"2002–2017",description:"Hardcore and punk community discussion",link:"https://web.archive.org/web/*/http://www.b9board.com/",status:"Capture research planned"}
 ];
