@@ -2,7 +2,10 @@ name: Live site smoke test
 on:
   push:
     paths:
-      - .github/workflows/live-smoke.yml
+      - '.github/workflows/live-smoke.yml'
+      - 'src/**'
+      - 'functions/**'
+      - 'scripts/live-smoke.mjs'
   workflow_dispatch:
 jobs:
   inspect:
