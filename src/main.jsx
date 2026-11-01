@@ -2,10 +2,13 @@ import React,{useEffect,useMemo,useState} from "react";
 import {createRoot} from "react-dom/client";
 import {Search,Disc3,Archive,Upload,Heart,Bookmark,MessageSquare,ArrowRight,ChevronRight,ChevronLeft,ExternalLink,Music2,Users,FolderOpen,FileText,Filter,SlidersHorizontal,Plus,Trash2,Download,CheckCircle,AlertTriangle,Info,Link2,Share2,Database,CalendarDays,RefreshCw,Headphones,FileUp,Menu,X,Star,BarChart3,ShieldCheck} from "lucide-react";
 import {starterThreads,artistCatalog,archives} from "./catalog.js";
+import PortalHome,{PortalAside,PortalHeaderArt} from "./PortalHome.jsx";
+import RemoteImport from "./RemoteImport.jsx";
 import {searchThreads,findArtists,threadArtists,buildGraph,discover,similarAuthors,stats,normalize} from "./engine.js";
 import {loadThreads,saveThread,deleteThread,readPref,writePref,exportArchive} from "./storage.js";
 import {parseHTML,parseJSON,parseManual,parseArtistCSV} from "./importers.js";
 import "./styles.css";
+import "./portal2009.css";
 
 const categories=["All Boards","Music Discussion","Recommendations","Hardcore / Screamo","Pop Punk / Emo","Scene / Electronic","Imported discussions"];
 const colorFor=(name)=>["#507e90","#947a72","#6d7c98","#8d7964","#607a70","#957e91"][Array.from(name).reduce((n,c)=>n+c.charCodeAt(0),0)%6];
@@ -99,6 +102,7 @@ function ImportPage({threads,onImported,onDelete,onOpen,onTasteImport,onExport})
  }
  return <div><PageTrail items={["Import desk"]}/><div className="si-section-title"><div><h1>The import desk</h1><p>Bring old forum threads into your personal, searchable collection.</p></div><Badge tone="orange">LOCAL ARCHIVE</Badge></div>
   <div className="si-notice"><Info size={17}/><span>Imports are saved in this browser's IndexedDB. They are not uploaded to a server or automatically shared. Only import content you have permission to preserve, and keep original source links when possible.</span></div>
+  <RemoteImport onImported={onImported} existing={threads}/>
   <Pane label="CHOOSE IMPORT METHOD" icon={FileUp}><div className="si-import-tabs">{[["html","Saved forum HTML"],["json","SceneIndex JSON"],["manual","Paste a thread"],["csv","Last.fm CSV"]].map(([k,label])=><button className={kind===k?"active":""} key={k} onClick={()=>{setKind(k);setNotice("")}}>{label}</button>)}</div>
    <div className="si-import-fields">
     {kind!=="csv"&&kind!=="json"&&<><label>Original forum name<input value={source} onChange={e=>setSource(e.target.value)} placeholder="e.g. LP Association Forums"/></label><label>Original URL (optional)<input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://forum.example.com/thread/..."/></label></>}
@@ -162,11 +166,11 @@ function App(){
  const items=[["home","Forums",MessageSquare],["search","Search",Search],["discover","Discover",Disc3],["sources","Sources",FolderOpen],["import","Import",Upload]];
  return <div className="si-app">
   <div className="si-top-accent"/>
-  <header className="si-header"><div className="si-container si-header-inner"><button className="si-brand" onClick={()=>navigate("home")}><span className="si-brand-icon">S<span>/</span>I</span><span><strong>SCENE<span>INDEX</span></strong><small>the scene music archive</small></span></button><div className="si-header-right"><span>YOUR PERSONAL INTERNET BACKUP</span><div className="si-header-dots"><i/><i/><i/></div></div></div></header>
+  <header className="si-header"><div className="si-container si-header-inner"><button className="si-brand" onClick={()=>navigate("home")}><span className="si-brand-icon">S<span>/</span>I</span><span><strong>SCENE<span>INDEX</span></strong><small>the scene music archive</small></span></button><PortalHeaderArt/></div></header>
   <div className="si-nav"><div className="si-container si-nav-inner"><button className="si-mobile-toggle" onClick={()=>setMenu(!menu)}><Menu size={17}/> Menu</button><nav className={menu?"open":""}>{items.map(([id,label,Icon])=><button key={id} className={page===id?"active":""} onClick={()=>navigate(id)}><Icon size={14}/>{label}</button>)}</nav><form onSubmit={runSearch} className="si-header-search"><Search size={14}/><input value={topSearch} onChange={e=>setTopSearch(e.target.value)} placeholder="Search bands, threads, people..." aria-label="Global search"/><button aria-label="Submit search"><ArrowRight size={14}/></button></form></div></div>
   <div className="si-container si-grid">
    <main className="si-main">{loading?<div className="si-empty">Opening your local archive...</div>:
-    page==="home"?<HomePage threads={threads} onOpen={openThread} onNavigate={navigate}/>:
+    page==="home"?<PortalHome threads={threads} onOpen={openThread} onNavigate={navigate} onArtist={openArtist}/>:
     page==="search"?<SearchPage threads={threads} initialQuery={searchTerm} onOpen={openThread} onArtist={openArtist}/>:
     page==="thread"?selectedThread?<ThreadPage thread={selectedThread} onBack={()=>navigate("home")} onArtist={openArtist} onSave={id=>setSaved(old=>old.includes(id)?old.filter(x=>x!==id):[...old,id])} saved={saved.includes(selectedThread.id)}/>:<div className="si-empty">Thread not found.</div>:
     page==="discover"?<DiscoverPage threads={threads} artists={favorites} onArtist={openArtist} onOpen={openThread} onAddArtist={addArtist} onRemoveArtist={removeArtist}/>:
@@ -176,12 +180,13 @@ function App(){
     page==="saved"?<div><PageTrail items={["Your saved threads"]}/><div className="si-section-title"><h1>Your saved threads</h1></div><Pane label="BOOKMARKS" icon={Bookmark}>{threads.filter(t=>saved.includes(t.id)).map(t=><ThreadRow key={t.id} thread={t} onOpen={openThread}/>)}</Pane></div>:null}
    </main>
    <aside className="si-sidebar">
+    {page==="home"&&<PortalAside onArtist={openArtist} onNavigate={navigate}/>}
     <Pane label="YOUR LISTENING PROFILE" icon={Headphones}><div className="si-sidebar-content"><p>Shape discoveries around your own taste.</p><div className="si-sidebar-count">{favorites.length}<span>artists in your crate</span></div><button className="si-sidebar-link" onClick={()=>navigate("discover")}>Edit music taste <ChevronRight size={13}/></button></div></Pane>
     <Pane label="LAST.FM IMPORT" icon={Disc3}><form className="si-sidebar-content si-lastfm" onSubmit={fetchLastfm}><label>Last.fm username<input value={lastfm} onChange={e=>setLastfm(e.target.value)} placeholder="username" aria-label="Last.fm username"/></label><button disabled={fmBusy} className="si-button small"><RefreshCw size={13}/>{fmBusy?"Loading":"Load recent top artists"}</button>{fmStatus&&<p className="si-fm-status">{fmStatus}</p>}<small>Optional. Requires a private API key in Cloudflare; CSV works without one.</small></form></Pane>
     <Pane label="ARCHIVE AT A GLANCE" icon={Database}><div className="si-sidebar-stats">{Object.entries(stats(threads)).map(([name,value])=><div key={name}><span>{name}</span><strong>{value}</strong></div>)}</div></Pane>
     <Pane label="MUSIC TALK" icon={Music2}><div className="si-sidebar-tags">{["electronicore","emo","screamo","recommendations","pop-punk","scene"].map(s=><button key={s} onClick={()=>onFind(s)}>#{s}</button>)}</div></Pane>
     <Pane label="BOOKMARKS" icon={Bookmark}><div className="si-sidebar-content"><p>{saved.length} saved {saved.length===1?"thread":"threads"}</p><button className="si-sidebar-link" onClick={()=>navigate("saved")}>View saved discussions <ChevronRight size={13}/></button></div></Pane>
-    <div className="si-source-warning"><Info size={14}/><span>Five source-grounded threads are preloaded. Import more real material to grow search and recommendations. No simulated forum conversations.</span></div>
+    <div className="si-source-warning"><Info size={14}/><span>Eleven source-grounded discussions are preloaded. Import more real material to grow search and recommendations. No simulated forum conversations.</span></div>
    </aside>
   </div>
   <footer className="si-footer"><div className="si-container"><span><b>SCENEINDEX</b> · A search engine for the old music internet</span><span>Independent preservation project · Original forum sources credited</span></div></footer>
