@@ -4,17 +4,17 @@ A late-2000s-style forum archive and music-discovery engine. Built separately fr
 
 ## What already works
 
-- Forum index, thread views, source directory, artist pages, saved discussions.
+- Forum index, thread views, a **native directory of 16 documented historical music communities across seven overlapping scene categories**, artist pages and saved discussions.
 - Full-text search across locally indexed threads, with source, year, tag and sort filters.
 - Music taste crate: manually enter artists, import a scrobble CSV or optionally use Last.fm recent top artists.
 - Explainable music recommendations and forum-author taste overlaps: derived from **real imported conversation evidence**, distinguishing mentions, requests and explicit recommendations.
 - Forum index scanning and selectable, locally resumable import queues (up to 40 thread requests per run); HTML/JSON/manual/CSV imports and JSON backups.
 - Internet Archive item search, public downloadable-file listings, and browser-side ZIP collections of saved forum pages.
 - Streaming offline converter for existing WARC/WARC.GZ forum dumps, preserving original URLs and capture dates.
-- Eleven source-linked **2006–2009** LP Association threads are preloaded, shown as clearly marked paraphrases (not verbatim historical messages).
+- **Sixteen** source-linked discussions are preloaded: 11 from LP Association (2006–2009), four from soEmo (2008–2009), and one retrospective Chorus thread (2016). All are clearly labeled editorial summaries, not invented historical quotes.
 - Local persistence using IndexedDB (threads) and localStorage (music crate and bookmarks).
 
-**Important:** The starter archive contains eleven real, source-linked discussions. The forum directory lists other prospective sources but does not imply that those threads have already been indexed.
+**Important:** A directory entry documents a genuine forum or music platform; it does **not** imply that its old conversations have been copied. The native community directory shows true indexed counts, evidence and archive links, and labels missing material transparently.
 
 ## Deployment
 
@@ -43,6 +43,12 @@ In the new Cloudflare Pages project open **Settings → Variables and Secrets �
 - Value: your Last.fm API key
 
 Then redeploy. The browser never sees that key. Check `/api/lastfm?status=1` for `configured:true`. A Last.fm CSV import does **not** require an API key.
+
+## Native historical community directory
+
+The **Communities** tab includes 16 historically documented original forums and related music sites. Filter by emo/screamo, scene and mall emo, post-hardcore, pop-punk, electronic/scene, goth/industrial or hardcore/punk, with overlapping facets where appropriate. The site distinguishes former VampireFreaks from newer VampFreaks and present-day Chorus.fm from the old AbsolutePunk archive.
+
+Every community has an in-site detail page with original-site links, Wayback snapshots, a primary historical reference, the number of actually indexed discussions and buttons to open those discussions directly in SceneIndex. The homepage also lists several historically significant communities, even when their posts are not yet indexed. See [research notes and primary sources](docs/HISTORICAL_COMMUNITIES.md).
 
 ## Using an existing downloaded forum archive
 
