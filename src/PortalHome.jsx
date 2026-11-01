@@ -18,7 +18,7 @@ export function PortalHeaderArt(){
   <div className="si-site-mast-links"><span>Original sources</span><span>Preserved conversations</span><span>Artist connections</span></div>
  </div>;
 }
-export function PortalAside({onArtist,onNavigate,threads=[]}){
+export function PortalAside({onArtist,onNavigate,onOpen,threads=[]}){
  const mentions=new Map();
  for(const thread of threads){
   for(const artist of threadArtists(thread)){
@@ -28,10 +28,20 @@ export function PortalAside({onArtist,onNavigate,threads=[]}){
  }
  const artists=[...mentions.values()].sort((a,b)=>b.threads-a.threads||a.name.localeCompare(b.name)).slice(0,12);
  const graph=buildGraph(threads);
- const suggestions=graph.edges.filter(e=>e.recommendationCount>0&&e.evidence.some(x=>x.kind==="recommended")).sort((a,b)=>b.recommendationCount-a.recommendationCount).slice(0,4);
+ const suggestions=new Map();
+ for(const edge of graph.edges){
+  if(!edge.recommendationCount)continue;
+  const evidence=edge.evidence.find(x=>x.kind==="recommended");
+  if(!evidence)continue;
+  const artist=edge.artists[1],related=edge.artists[0],key=evidence.threadId+"::"+artist;
+  if(!suggestions.has(key))suggestions.set(key,{artist,related:new Set(),evidence,count:0});
+  suggestions.get(key).related.add(related);
+  suggestions.get(key).count+=edge.recommendationCount;
+ }
+ const grouped=[...suggestions.values()].sort((a,b)=>b.count-a.count).slice(0,4);
  return <div className="ap-aside-top">
   <Box title="Artists Mentioned"><div className="si-artist-rank"><div className="si-rank-head"><span>Band / artist</span><span>Threads</span></div>{artists.map((a,i)=><button key={a.name} onClick={()=>onArtist(a.name)}><span className="si-rank-number">{i+1}.</span><strong>{a.name}</strong><small>{a.threads}</small></button>)}</div><button className="ap-side-plain" onClick={()=>onNavigate("search")}>Search the artist index »</button></Box>
-  {suggestions.length>0&&<Box title="Recommendations on Record"><div className="si-source-rec">{suggestions.map((e,i)=>{const ev=e.evidence.find(x=>x.kind==="recommended");return <div key={i}><button onClick={()=>onArtist(e.artists[1])}>{e.artists[1]}</button><small>Discussed with {e.artists[0]}</small><span>{ev?.date||"Forum recommendation"}</span></div>})}</div><button className="ap-side-plain" onClick={()=>onNavigate("discover")}>Compare your music taste »</button></Box>}
+  {grouped.length>0&&<Box title="Recommendations on Record"><div className="si-source-rec">{grouped.map((item,i)=><div key={i}><button onClick={()=>onArtist(item.artist)}>{item.artist}</button><small>Suggested alongside: {[...item.related].join(", ")}</small><span>{item.evidence.source} · {item.evidence.date}</span><button className="si-source-link" onClick={()=>onOpen(item.evidence.threadId)}>Read original discussion »</button></div>)}</div><button className="ap-side-plain" onClick={()=>onNavigate("discover")}>Compare your music taste »</button></Box>}
  </div>;
 }
 const isKnownDate=t=>t.dateBasis!=="unknown"&&Number(t.year)>=1900;
@@ -45,7 +55,7 @@ function Listing({threads,onOpen}){
  </article>)}
  </div>
 }
-export default function PortalHome({threads,onOpen,onNavigate,onArtist}){
+export default function PortalHome({threads,onOpen,onNavigate,onArtist,onYear}){
  const ordered=[...threads].sort((a,b)=>(isKnownDate(b)?b.date:"0000").localeCompare(isKnownDate(a)?a.date:"0000"));
  const sources=[...new Set(ordered.map(t=>t.source))];
  const years=[...new Set(ordered.filter(isKnownDate).map(t=>t.year))].sort((a,b)=>b-a);
@@ -56,7 +66,7 @@ export default function PortalHome({threads,onOpen,onNavigate,onArtist}){
   <div className="ap-home-grid">
    <aside className="ap-left">
     <Box title="Forum Directory"><div className="ap-directory">{sources.map(source=><button key={source} onClick={()=>onNavigate("sources")}><b>▣</b><span>{source}</span><small>{threads.filter(t=>t.source===source).length}</small></button>)}</div></Box>
-    <Box title="Browse by Year"><div className="ap-year-index">{years.map(y=><button key={y} onClick={()=>onNavigate("search")}>{y}<small>{threads.filter(t=>t.year===y).length} threads</small></button>)}</div></Box>
+    <Box title="Browse by Year"><div className="ap-year-index">{years.map(y=><button key={y} onClick={()=>onYear(y)}>{y}<small>{threads.filter(t=>t.year===y).length} threads</small></button>)}</div></Box>
     <Box title="Live Archives"><Picture photo={art.saosin}/><div className="ap-photo-credits">Saosin, 2007 · <a href={art.saosin.page} target="_blank" rel="noopener noreferrer">Photo source</a></div><button className="ap-feature-name" onClick={()=>onArtist("Saosin")}>View Saosin discussions »</button></Box>
     <Box title="Tools"><div className="ap-side-links"><button onClick={()=>onNavigate("import")}>Import an existing archive</button><button onClick={()=>onNavigate("discover")}>Compare music taste</button><button onClick={()=>onNavigate("search")}>Search all threads</button></div></Box>
    </aside>
