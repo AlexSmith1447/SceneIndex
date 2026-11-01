@@ -20,7 +20,8 @@ export async function parseArchiveBundle(file,{sourceName=""}={}){
  if(kind==="offline")throw Error("WARC, TAR, 7z and RAR archives require offline conversion. Use the SceneIndex WARC converter or extract them to a ZIP of HTML files.");
  if(file.size>maxZip)throw Error("The browser importer limits files to 24 MB compressed. For larger collections, use the offline converter and split the bundle.");
  const buffer=new Uint8Array(await file.arrayBuffer());
- const entries=kind==="zip"?unzipSync(buffer,{filter:e=>e.originalSize<=maxMember}):{[file.name]:buffer};
+ let accepted=0,inflated=0;
+ const entries=kind==="zip"?unzipSync(buffer,{filter:e=>{if(e.originalSize>maxMember||!fileNames(e.name)&&e.name!=="sceneindex-manifest.json")return false;accepted++;inflated+=e.originalSize;return accepted<=maxFiles+1&&inflated<=maxInflated}}):{[file.name]:buffer};
  const list=Object.entries(entries).filter(([name])=>fileNames(name));
  if(list.length>maxFiles)throw Error("Archive contains too many HTML/JSON files. Split into bundles of 300 or fewer pages.");
  if(!list.length)throw Error("No small HTML or JSON pages were found inside the archive.");
