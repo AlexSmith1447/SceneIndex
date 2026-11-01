@@ -52,9 +52,32 @@ export function parseJSON(text){
 }
 const text=(root,selector)=>{const e=root.querySelector(selector);return (e?.textContent||"").replace(/\s+/g," ").trim()};
 const human=(e)=>e?.textContent?.replace(/[ \t]+/g," ").replace(/\n{3,}/g,"\n\n").trim()||"";
+function parseSoemoPosts(doc,{source,sourceUrl,captureUrl,captureDate,title}){
+ const nodes=[...doc.querySelectorAll(".post#topic, .post[id^='post']")].slice(0,250);
+ if(!nodes.length)throw new Error("soEmo thread markup was not found. Save the thread HTML and inspect its layout.");
+ const posts=nodes.map((node,i)=>{
+   const author=node.querySelector(".post__avatar a[aria-label]")?.getAttribute("aria-label")||
+      text(node,".post__avatar a[href*='/users/']");
+   const bodyEl=node.querySelector(node.id==="topic"?"[id^='t']":"[id^='i']");
+   const body=human(bodyEl);
+   const rawDate=text(node,".author-meta .time, .author-meta .name");
+   const date=dateFrom(rawDate);
+   return {author:author||"Unknown",date,text:body,kind:postKind(body)};
+ }).filter(p=>p.text.length>=3&&p.text.length<12001);
+ if(!posts.length)throw new Error("Found soEmo post wrappers but no readable messages.");
+ const firstDate=posts.find(p=>p.date)?.date;
+ const archiveTimestamp=String(captureUrl||"").match(/\/web\/(\d{4})(\d{2})(\d{2})/);
+ const capturedDate=archiveTimestamp?archiveTimestamp.slice(1,4).join("-"):dateish(captureDate)||null;
+ const basis=firstDate?"post":capturedDate?"capture":"unknown";
+ const pageTitle=title||text(doc,".post#topic .author-meta .name")||text(doc,"h1")||doc.title||"soEmo discussion";
+ return [validate({title:pageTitle,source:source==="Imported forum"?"soEmo.co.uk":source,sourceUrl,captureUrl,date:firstDate||capturedDate||"0000-01-01",dateBasis:basis,board:"Emo Music",posts})];
+}
 export function parseHTML(html,{source="Imported forum",sourceUrl="",captureUrl=null,captureDate=null,title=""}={}){
   if(html.length>7_000_000)throw new Error("HTML file is too large (7 MB maximum).");
   const doc=new DOMParser().parseFromString(html,"text/html");
+  const isSoemo=/(?:^|\/\/)\s*(?:www\.)?soemo\.co\.uk/i.test(sourceUrl)||
+    ((doc.title||"").includes("Emo Scene Community Forums")&&!!doc.querySelector(".post#topic"));
+  if(isSoemo)return parseSoemoPosts(doc,{source,sourceUrl,captureUrl,captureDate,title});
   // Supported first-pass selectors: XenForo, vBulletin, phpBB, Invision.
   const selectors=["article.message[data-author]","article.message--post","li.message[data-author]","li.message",
     ".message--post",".postbit",".postbody",".ipsComment",".cPost",".post","div.post_message"];
