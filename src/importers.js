@@ -13,12 +13,14 @@ function validate(raw){
   const title=clamp(obj.title,200);
   const source=clamp(obj.source||"Personal import",100);
   const url=validURL(obj.sourceUrl);
-  const date=dateish(obj.date)||new Date().toISOString().slice(0,10);
+  const date=dateish(obj.date);
+  if(!date)throw new Error("A valid historical YYYY-MM-DD date is required. SceneIndex will not invent an original posting date.");
   if(!title)throw new Error("A thread title is required.");
   const p=Array.isArray(obj.posts)?obj.posts:[];
   if(!p.length)throw new Error("No posts were detected.");
   return {id:identifier(url,title,date),title,source,sourceUrl:url,board:clamp(obj.board||"Imported discussions",100),
     date,year:Number(date.slice(0,4)),origin:"user-import",excerptOnly:!!obj.excerptOnly,
+    captureUrl:validURL(obj.captureUrl)||null,dateBasis:obj.dateBasis==="capture"?"capture":"post",
     tags:(Array.isArray(obj.tags)?obj.tags:[]).map(x=>slug(x)).filter(Boolean).slice(0,15),
     posts:p.slice(0,250).map((post,i)=>({
       id:"p-"+(i+1),author:clamp(post.author||"Unknown",70),date:dateish(post.date)||date,role:clamp(post.role||"Member",70),
@@ -37,7 +39,7 @@ export function parseJSON(text){
 }
 const text=(root,selector)=>{const e=root.querySelector(selector);return (e?.textContent||"").replace(/\s+/g," ").trim()};
 const human=(e)=>e?.textContent?.replace(/[ \t]+/g," ").replace(/\n{3,}/g,"\n\n").trim()||"";
-export function parseHTML(html,{source="Imported forum",sourceUrl="",title=""}={}){
+export function parseHTML(html,{source="Imported forum",sourceUrl="",captureUrl=null,title=""}={}){
   if(html.length>7_000_000)throw new Error("HTML file is too large (7 MB maximum).");
   const doc=new DOMParser().parseFromString(html,"text/html");
   // Supported first-pass selectors: XenForo, vBulletin, phpBB, Invision.
@@ -59,9 +61,12 @@ export function parseHTML(html,{source="Imported forum",sourceUrl="",title=""}={
     return {author:author||"Unknown",text:body,role:"Member",date,kind:postKind(body)};
   }).filter(p=>p.text.length>=10 && p.text.length<12001);
   const pageTitle=title||text(doc,"h1")||doc.title||"Imported thread";
-  const firstDate=parsed.find(p=>p.date)?.date||new Date().toISOString().slice(0,10);
+  const firstDate=parsed.find(p=>p.date)?.date;
+  const archiveTimestamp=String(captureUrl||"").match(/\/web\/(\d{4})(\d{2})(\d{2})/);
+  const capturedDate=archiveTimestamp?archiveTimestamp[1]+"-"+archiveTimestamp[2]+"-"+archiveTimestamp[3]:null;
   if(!parsed.length)throw new Error("Post containers found, but no readable message text.");
-  return [validate({title:pageTitle,source,sourceUrl,date:firstDate,board:"Imported discussions",posts:parsed})];
+  if(!firstDate&&!capturedDate)throw new Error("No original post date could be extracted. Use manual import to supply a verified date rather than mislabeling the discussion as recent.");
+  return [validate({title:pageTitle,source,sourceUrl,captureUrl,date:firstDate||capturedDate,dateBasis:firstDate?"post":"capture",board:"Imported discussions",posts:parsed})];
 }
 export function parseManual({title,source,sourceUrl,board,raw,date}){
   const parts=raw.split(/\n\s*---+\s*\n/).map(p=>p.trim()).filter(Boolean);
