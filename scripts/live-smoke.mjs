@@ -98,11 +98,11 @@ try{
    const doc=new DOMParser().parseFromString(j.html,"text/html");
    const selectors=[".post","article",".forum-post",".forumPost",".forum_message",".forum-post-body","table","blockquote","h1","h2",".username","a[href*=users]","a[href*=profile]"];
    const tags=selectors.map(x=>[x,doc.querySelectorAll(x).length]);
-   const sample=Array.from(doc.querySelectorAll(".post, article, .forumPost, table")).slice(0,3).map(n=>({tag:n.tagName,class:n.className,html:n.outerHTML.slice(0,600)}));
+   const sample=Array.from(doc.querySelectorAll(".post")).slice(0,2).map(n=>({tag:n.tagName,class:n.className,classes:[...new Set([...n.querySelectorAll("[class]")].map(e=>e.className).filter(x=>typeof x==="string"))].slice(0,40),html:n.outerHTML.slice(0,3300),text:n.textContent.slice(0,450)}));
    return {status:r.status,title:doc.title,bytes:j.bytes,tags,sample};
   }catch(e){return {status:0,error:e.message}}
  });
- console.log("SOEMO_ORIGINAL_HTML",JSON.stringify(soemoProbe).slice(0,4000));
+ console.log("SOEMO_ORIGINAL_HTML",JSON.stringify(soemoProbe).slice(0,8500));
 
  const rawProbe=await page.evaluate(async()=>{
    const target="https://www.lpassociation.com/forum/threads/saosin.22761/";
