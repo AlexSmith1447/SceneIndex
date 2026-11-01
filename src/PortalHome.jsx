@@ -8,13 +8,13 @@ const art={
 function Picture({photo}){
  return <a className="ap-photo" href={photo.page} target="_blank" rel="noopener noreferrer" title={"Source: "+photo.credit}>
   <img loading="lazy" src={photo.src} alt={photo.artist+" performing live in 2007"} onError={e=>{e.currentTarget.style.display="none";e.currentTarget.parentElement.classList.add("ap-photo-unavailable")}}/>
-  <span className="ap-photo-backup">View original concert photo</span>
+  <span className="ap-photo-backup">{photo.artist}<small>2007 live photograph</small><u>View original photo</u></span>
  </a>
 }
 function Box({title,children,extra}){return <section className="ap-box"><h2 className="ap-head"><span>{title}</span>{extra}</h2>{children}</section>}
 export function PortalHeaderArt(){
  return <div className="ap-header-strip">
-  <div className="ap-mast-pic"><img src={art.tbs.src} alt="Taking Back Sunday in 2007" onError={e=>e.currentTarget.style.display="none"}/></div>
+  <div className="ap-mast-pic ap-photo-mast"><span>Taking Back Sunday<br/>2007</span><img src={art.tbs.src} alt="Taking Back Sunday in 2007" onError={e=>e.currentTarget.style.display="none"}/></div>
   <div className="ap-mast-pic"><img src={art.saosin.src} alt="Saosin in 2007" onError={e=>e.currentTarget.style.display="none"}/></div>
   <div className="ap-mast-type"><strong>FORUM ARCHIVES</strong><span>Music discussion · 2000–2010</span><small>Source-linked historical conversations</small></div>
  </div>
