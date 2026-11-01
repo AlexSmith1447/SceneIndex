@@ -52,7 +52,7 @@ export function parseJSON(text){
 }
 const text=(root,selector)=>{const e=root.querySelector(selector);return (e?.textContent||"").replace(/\s+/g," ").trim()};
 const human=(e)=>e?.textContent?.replace(/[ \t]+/g," ").replace(/\n{3,}/g,"\n\n").trim()||"";
-export function parseHTML(html,{source="Imported forum",sourceUrl="",captureUrl=null,title=""}={}){
+export function parseHTML(html,{source="Imported forum",sourceUrl="",captureUrl=null,captureDate=null,title=""}={}){
   if(html.length>7_000_000)throw new Error("HTML file is too large (7 MB maximum).");
   const doc=new DOMParser().parseFromString(html,"text/html");
   // Supported first-pass selectors: XenForo, vBulletin, phpBB, Invision.
@@ -75,7 +75,7 @@ export function parseHTML(html,{source="Imported forum",sourceUrl="",captureUrl=
   const pageTitle=title||text(doc,"h1")||doc.title||"Imported thread";
   const firstDate=parsed.find(p=>p.date)?.date;
   const archiveTimestamp=String(captureUrl||"").match(/\/web\/(\d{4})(\d{2})(\d{2})/);
-  const capturedDate=archiveTimestamp?archiveTimestamp[1]+"-"+archiveTimestamp[2]+"-"+archiveTimestamp[3]:null;
+  const capturedDate=archiveTimestamp?archiveTimestamp[1]+"-"+archiveTimestamp[2]+"-"+archiveTimestamp[3]:dateish(captureDate)||null;
   if(!parsed.length)throw new Error("Post containers found, but no readable message text.");
   // Unknown dates are indexed with a sentinel that always sorts last; they are NEVER displayed as 0000.
   // A snapshot's date is only an upper bound, not the thread creation date.
