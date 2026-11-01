@@ -89,6 +89,21 @@ try{
  console.log("ZIP_ARCHIVE_IMPORT_OK");
  await page.locator(".ap-remote-pane").waitFor({state:"visible"});
  console.log("IMPORT_OK");
+ const soemoProbe=await page.evaluate(async()=>{
+  const u="https://www.soemo.co.uk/forums/topic.php?id=2800459";
+  try{
+   const r=await fetch("/api/archive?"+new URLSearchParams({mode:"fetch",url:u}));
+   const j=await r.json();
+   if(!r.ok)return {status:r.status,error:j.error||"not accessible"};
+   const doc=new DOMParser().parseFromString(j.html,"text/html");
+   const selectors=[".post","article",".forum-post",".forumPost",".forum_message",".forum-post-body","table","blockquote","h1","h2",".username","a[href*=users]","a[href*=profile]"];
+   const tags=selectors.map(x=>[x,doc.querySelectorAll(x).length]);
+   const sample=Array.from(doc.querySelectorAll(".post, article, .forumPost, table")).slice(0,3).map(n=>({tag:n.tagName,class:n.className,html:n.outerHTML.slice(0,600)}));
+   return {status:r.status,title:doc.title,bytes:j.bytes,tags,sample};
+  }catch(e){return {status:0,error:e.message}}
+ });
+ console.log("SOEMO_ORIGINAL_HTML",JSON.stringify(soemoProbe).slice(0,4000));
+
  const rawProbe=await page.evaluate(async()=>{
    const target="https://www.lpassociation.com/forum/threads/saosin.22761/";
    try {
