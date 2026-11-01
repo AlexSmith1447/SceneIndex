@@ -1,49 +1,69 @@
 import React from "react";
-import {MessageSquare,ExternalLink,Music2,Star,FolderOpen,ArrowRight,CompactDisc,Bookmark} from "lucide-react";
+import {threadArtists,buildGraph,stats} from "./engine.js";
 
-export const art={
- saosin:{src:"https://commons.wikimedia.org/wiki/Special:Redirect/file/Saosin_live_on_Projekt_Revolution_tour.jpg?width=460",credit:"2007 concert photo · Wikimedia Commons",page:"https://commons.wikimedia.org/wiki/File:Saosin_live_on_Projekt_Revolution_tour.jpg",artist:"Saosin"},
+const art={
+ saosin:{src:"https://commons.wikimedia.org/wiki/Special:Redirect/file/Saosin_live_on_Projekt_Revolution_tour.jpg?width=460",credit:"Wikimedia Commons · 2007",page:"https://commons.wikimedia.org/wiki/File:Saosin_live_on_Projekt_Revolution_tour.jpg",artist:"Saosin"},
  tbs:{src:"https://commons.wikimedia.org/wiki/Special:Redirect/file/Taking_Back_Sunday_live_in_Boston.jpg?width=460",credit:"Debs · CC BY 2.0 · 2007",page:"https://commons.wikimedia.org/wiki/File:Taking_Back_Sunday_live_in_Boston.jpg",artist:"Taking Back Sunday"}
 };
-function Picture({photo,alt}){return <a href={photo.page} target="_blank" rel="noopener noreferrer" title={"Photo credit: "+photo.credit} className="ap-photo"><img src={photo.src} alt={alt||photo.artist} loading="lazy" onError={e=>{e.currentTarget.style.display="none";e.currentTarget.parentElement.classList.add("ap-photo-unavailable")}}/><span className="ap-photo-backup">Photo source <ExternalLink size={12}/></span></a>}
-function PortalBox({name,children,right}){return <section className="ap-box"><h2 className="ap-head"><span>{name}</span>{right}</h2>{children}</section>}
+function Picture({photo}){
+ return <a className="ap-photo" href={photo.page} target="_blank" rel="noopener noreferrer" title={"Source: "+photo.credit}>
+  <img loading="lazy" src={photo.src} alt={photo.artist+" performing live in 2007"} onError={e=>{e.currentTarget.style.display="none";e.currentTarget.parentElement.classList.add("ap-photo-unavailable")}}/>
+  <span className="ap-photo-backup">View original concert photo</span>
+ </a>
+}
+function Box({title,children,extra}){return <section className="ap-box"><h2 className="ap-head"><span>{title}</span>{extra}</h2>{children}</section>}
 export function PortalHeaderArt(){
  return <div className="ap-header-strip">
-  <div className="ap-mast-pic"><img src={art.saosin.src} alt="Saosin performing in 2007" onError={e=>e.currentTarget.style.display="none"}/></div>
-  <div className="ap-mast-pic"><img src={art.tbs.src} alt="Taking Back Sunday live in 2007" onError={e=>e.currentTarget.style.display="none"}/></div>
-  <div className="ap-mast-type"><small>SCENEINDEX</small><strong>THE ARCHIVE<br/>IS STILL ALIVE.</strong><span>2000s music / real forum history</span></div>
+  <div className="ap-mast-pic"><img src={art.tbs.src} alt="Taking Back Sunday in 2007" onError={e=>e.currentTarget.style.display="none"}/></div>
+  <div className="ap-mast-pic"><img src={art.saosin.src} alt="Saosin in 2007" onError={e=>e.currentTarget.style.display="none"}/></div>
+  <div className="ap-mast-type"><strong>FORUM ARCHIVES</strong><span>Music discussion · 2000–2010</span><small>Source-linked historical conversations</small></div>
+ </div>
+}
+export function PortalAside({onArtist,onNavigate,threads=[]}){
+ const s=stats(threads);
+ return <div className="ap-aside-top">
+  <Box title="Photo Archive">
+   <Picture photo={art.tbs}/>
+   <div className="ap-photo-credits">2007 · <a href={art.tbs.page} target="_blank" rel="noopener noreferrer">Debs (CC BY 2.0)</a></div>
+   <button className="ap-feature-name" onClick={()=>onArtist("Taking Back Sunday")}>Taking Back Sunday</button>
+  </Box>
+  <Box title="Archive Statistics"><div className="ap-archive-stats"><div><b>{s.threads}</b> indexed discussions</div><div><b>{s.posts}</b> preserved post excerpts</div><div><b>{s.sources}</b> source communities</div></div><button className="ap-side-plain" onClick={()=>onNavigate("sources")}>Browse sources »</button></Box>
  </div>;
 }
-export function PortalAside({onArtist,onNavigate}){
- return <div className="ap-aside-top">
-  <PortalBox name="Featured Band"><Picture photo={art.tbs}/><div className="ap-photo-credits"><a href={art.tbs.page} target="_blank" rel="noopener noreferrer">Photo: Debs (CC BY 2.0)</a></div><button className="ap-feature-name" onClick={()=>onArtist("Taking Back Sunday")}>Taking Back Sunday <ArrowRight size={12}/></button><div className="ap-feature-sub">Projekt Revolution · 2007</div><div className="ap-feature-buttons"><button onClick={()=>onArtist("Taking Back Sunday")}>PROFILE</button><button onClick={()=>onNavigate("discover")}>DISCOVER</button></div></PortalBox>
-  <PortalBox name="Artist Spotlight"><Picture photo={art.saosin}/><div className="ap-photo-credits"><a href={art.saosin.page} target="_blank" rel="noopener noreferrer">Photo: 2007 · Wikimedia Commons</a></div><button className="ap-feature-name" onClick={()=>onArtist("Saosin")}>Saosin <ArrowRight size={12}/></button><div className="ap-feature-sub">Debut album discussion · 2006</div></PortalBox>
+const isKnownDate=t=>t.dateBasis!=="unknown"&&Number(t.year)>=1900;
+const humanDate=t=>!isKnownDate(t)?"date unknown":t.dateBasis==="capture"?"captured "+t.date:t.date;
+function Listing({threads,onOpen}){
+ return <div className="ap-thread-table"><div className="ap-thread-columns"><span>Discussion / source</span><span>Posts</span><span>Date</span></div>
+ {threads.map(t=><article className="ap-story" key={t.id}>
+  <div className="ap-story-title-row"><span className="ap-thread-forum">▣</span><div className="ap-story-main"><button className="ap-story-title" onClick={()=>onOpen(t.id)}>{t.title}</button><div className="ap-story-description">{(t.posts?.[0]?.text||"").slice(0,130)}{(t.posts?.[0]?.text||"").length>130?"…":""}</div><div className="ap-story-sourceline">{t.source} · {t.board} · {t.origin==="verified-paraphrase"?"source-linked summary":"imported archive"}</div></div></div>
+  <span className="ap-story-replies">{t.posts?.length||0}</span>
+  <span className="ap-story-date">{humanDate(t)}</span>
+ </article>)}
  </div>
 }
 export default function PortalHome({threads,onOpen,onNavigate,onArtist}){
- const latest=[...threads].sort((a,b)=>b.date.localeCompare(a.date));
- const picks=latest.filter(t=>/(saosin|post.hardcore|emo|album|recommend)/i.test(t.title+" "+(t.tags||[]).join(" "))).slice(0,3);
- const more=latest.filter(t=>!picks.some(p=>p.id===t.id));
- const render=(list)=>list.map(t=><article className="ap-story" key={t.id}>
-  <button className="ap-story-title" onClick={()=>onOpen(t.id)}><span className="ap-story-icon"><MessageSquare size={13}/></span>{t.title}</button>
-  <p>{(t.posts?.[0]?.text||"").slice(0,235)}{(t.posts?.[0]?.text||"").length>235?"…":""}</p>
-  <div className="ap-story-meta">by <b>{t.posts?.[0]?.author||"Unknown"}</b> on {t.dateBasis==="unknown"?"undated":t.dateBasis==="capture"?"capture "+t.date:t.date} <span>·</span> {t.source} <button onClick={()=>onOpen(t.id)}>{t.posts?.length||0} indexed {t.posts?.length===1?"post":"posts"} <MessageSquare size={11}/></button></div>
- </article>);
+ const ordered=[...threads].sort((a,b)=>(isKnownDate(b)?b.date:"0000").localeCompare(isKnownDate(a)?a.date:"0000"));
+ const sources=[...new Set(ordered.map(t=>t.source))];
+ const years=[...new Set(ordered.filter(isKnownDate).map(t=>t.year))].sort((a,b)=>b-a);
+ const graph=buildGraph(threads);
+ const recommended=graph.edges.filter(x=>x.recommendationCount>0).sort((a,b)=>b.recommendationCount-a.recommendationCount||b.weight-a.weight).slice(0,4);
  return <div className="ap-home">
-  <div className="ap-home-intro"><span><b>⌂</b> SceneIndex.net</span><span>Welcome to the old music internet. <button onClick={()=>onNavigate("import")}>Contribute an archive <ArrowRight size={11}/></button></span></div>
+  <div className="ap-home-intro"><strong>SceneIndex.net</strong><span>Forum index &gt; Music discussion</span><button onClick={()=>onNavigate("search")}>Search archive »</button></div>
   <div className="ap-home-grid">
-   <div className="ap-left">
-    <PortalBox name="Fireworks"><Picture photo={art.saosin}/><div className="ap-photo-credits"><a href={art.saosin.page} target="_blank" rel="noopener noreferrer">Live photo · 2007 / Commons</a></div><div className="ap-spotlight-name"><button onClick={()=>onArtist("Saosin")}>Saosin</button><small>Project Revolution, 2007</small></div><div className="ap-tiny-actions"><button onClick={()=>onArtist("Saosin")}><Music2 size={13}/> MUSIC</button><button onClick={()=>onNavigate("discover")}><Star size={13}/> FIND</button></div></PortalBox>
-    <PortalBox name="Scene Exclusives"><div className="ap-exclusives">{[["The Medic Droid","2008 recommendation"],["Cute Is What We Aim For","2008 scene discussion"],["I Am Ghost","2006 album favorites"],["Chiodos","Post-hardcore favorites"]].map(([a,sub])=><button onClick={()=>onArtist(a)} key={a}><span className="ap-letter">{a.slice(0,1)}</span><span><strong>{a}</strong><small>{sub}</small></span></button>)}</div></PortalBox>
-    <PortalBox name="Archive Tools"><div className="ap-side-links"><button onClick={()=>onNavigate("import")}>Import old forum threads</button><button onClick={()=>onNavigate("search")}>Search all discussions</button><button onClick={()=>onNavigate("sources")}>Original forum sources</button></div></PortalBox>
-   </div>
+   <aside className="ap-left">
+    <Box title="Forum Directory"><div className="ap-directory">{sources.map(source=><button key={source} onClick={()=>onNavigate("sources")}><b>▣</b><span>{source}</span><small>{threads.filter(t=>t.source===source).length}</small></button>)}</div></Box>
+    <Box title="Browse by Year"><div className="ap-year-index">{years.map(y=><button key={y} onClick={()=>onNavigate("search")}>{y}<small>{threads.filter(t=>t.year===y).length} threads</small></button>)}</div></Box>
+    <Box title="Live Archives"><Picture photo={art.saosin}/><div className="ap-photo-credits">Saosin, 2007 · <a href={art.saosin.page} target="_blank" rel="noopener noreferrer">Photo source</a></div><button className="ap-feature-name" onClick={()=>onArtist("Saosin")}>View Saosin discussions »</button></Box>
+    <Box title="Tools"><div className="ap-side-links"><button onClick={()=>onNavigate("import")}>Import an existing archive</button><button onClick={()=>onNavigate("discover")}>Compare music taste</button><button onClick={()=>onNavigate("search")}>Search all threads</button></div></Box>
+   </aside>
    <div className="ap-center">
-    <PortalBox name="★ Staff Picks / Music Discovery" right={<button className="ap-head-action" onClick={()=>onNavigate("discover")}>Discovery Engine »</button>}>
-      <div className="ap-staff-picks"><strong>Old forum recommendations, new discoveries.</strong><p>Find the bands that actual forum members suggested to listeners with similar tastes. Every suggestion includes its source thread.</p><button onClick={()=>onNavigate("discover")}>Explore recommendations &raquo;</button></div>
-    </PortalBox>
-    <PortalBox name="Featured Forum Discussions" right={<button className="ap-head-action" onClick={()=>onNavigate("search")}>More threads »</button>}>{render(picks)}</PortalBox>
-    <PortalBox name="From The Archives / 2006–2009" right={<button className="ap-head-action" onClick={()=>onNavigate("search")}>Search all »</button>}>{render(more)}</PortalBox>
-    <div className="ap-bottom-note">Posts are source-linked summaries, not fabricated old-forum messages. <button onClick={()=>onNavigate("sources")}>View original sources</button></div>
+    <Box title="Forum Discussions" extra={<button className="ap-head-action" onClick={()=>onNavigate("search")}>Advanced Search »</button>}>
+      <Listing threads={ordered.slice(0,60)} onOpen={onOpen}/>
+    </Box>
+    {recommended.length>0&&<Box title="Recommendations Found in Threads" extra={<button className="ap-head-action" onClick={()=>onNavigate("discover")}>More »</button>}>
+      <div className="ap-authentic-rec-list">{recommended.map((edge,i)=><div key={i}><button onClick={()=>onArtist(edge.artists[1])}>{edge.artists[1]}</button><span>mentioned alongside <b>{edge.artists[0]}</b> · {edge.recommendationCount} direct recommendation(s)</span><button onClick={()=>onOpen(edge.evidence[0].threadId)}>View post »</button></div>)}</div>
+    </Box>}
+    <div className="ap-bottom-note">Historical excerpts are labeled as summaries where appropriate. Original sources are linked inside each discussion.</div>
    </div>
   </div>
  </div>
