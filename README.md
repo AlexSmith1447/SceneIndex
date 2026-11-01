@@ -9,6 +9,8 @@ A late-2000s-style forum archive and music-discovery engine. Built separately fr
 - Music taste crate: manually enter artists, import a scrobble CSV or optionally use Last.fm recent top artists.
 - Explainable music recommendations and forum-author taste overlaps: derived from **real imported conversation evidence**, distinguishing mentions, requests and explicit recommendations.
 - Forum index scanning and selectable, locally resumable import queues (up to 40 thread requests per run); HTML/JSON/manual/CSV imports and JSON backups.
+- Internet Archive item search, public downloadable-file listings, and browser-side ZIP collections of saved forum pages.
+- Streaming offline converter for existing WARC/WARC.GZ forum dumps, preserving original URLs and capture dates.
 - Eleven source-linked **2006–2009** LP Association threads are preloaded, shown as clearly marked paraphrases (not verbatim historical messages).
 - Local persistence using IndexedDB (threads) and localStorage (music crate and bookmarks).
 
@@ -41,6 +43,14 @@ In the new Cloudflare Pages project open **Settings → Variables and Secrets �
 - Value: your Last.fm API key
 
 Then redeploy. The browser never sees that key. Check `/api/lastfm?status=1` for `configured:true`. A Last.fm CSV import does **not** require an API key.
+
+## Using an existing downloaded forum archive
+
+The new **Existing archive collections** section on the Import page searches Internet Archive's public catalogue, displays available files, and links to original downloads. It can ingest ZIP collections containing saved HTML discussions, an individual saved HTML page, or a SceneIndex JSON export. Extraction is bounded and reported per file. Large original WARC dumps can be converted into ZIPs using `scripts/warc_to_bundle.py` before importing.
+
+See [the archive package guide](docs/ARCHIVE_PACKAGES.md) for supported formats, genuine limitations and instructions.
+
+The homepage has also undergone a content-first [design audit](docs/DESIGN_AUDIT.md): previous faux editorials and template-like cards are replaced by genuine source-derived thread tables, dates, original forum links and recommendation evidence.
 
 ## Importing old forums
 
