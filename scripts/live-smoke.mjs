@@ -101,7 +101,17 @@ try{
 
  if(!rawProbe.ok)console.log("ARCHIVE_PROXY_WARNING",rawProbe.error);
 
- if(faults.length)throw Error("Frontend exceptions: "+faults.join(" | "));
+ await page.setViewportSize({width:390,height:844});
+ await page.goto("https://sceneindex.pages.dev/",{waitUntil:"domcontentloaded",timeout:25000});
+ await page.locator(".ap-story").first().waitFor({state:"visible",timeout:13000});
+ const dims=await page.evaluate(()=>({viewport:innerWidth,document:document.documentElement.scrollWidth,firstRow:getComputedStyle(document.querySelector(".ap-story")).display}));
+ console.log("MOBILE_LAYOUT",JSON.stringify(dims));
+ if(dims.document>dims.viewport+8)throw Error("Mobile horizontal overflow: "+JSON.stringify(dims));
+ await page.locator(".si-mobile-toggle").click();
+ await page.getByRole("button",{name:"Search",exact:true}).first().click();
+ await page.locator(".si-wide-search input").waitFor({state:"visible"});
+ console.log("MOBILE_NAV_OK");
+  if(faults.length)throw Error("Frontend exceptions: "+faults.join(" | "));
  console.log("NO_JS_ERRORS");
 }catch(error){console.error(error);console.error("BROWSER_FAULTS",JSON.stringify(faults));process.exitCode=1}
 finally{
