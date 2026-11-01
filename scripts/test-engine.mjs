@@ -6,6 +6,7 @@ import {onRequestGet as archiveRequest} from "../functions/api/archive.js";
 import {canonicalThreadURL,normalizeURLForDedupe} from "../src/harvest.js";
 import {onRequestGet as libraryRequest} from "../functions/api/library.js";
 import {onRequestPost as publishRequest} from "../functions/api/publish.js";
+import {communities,sceneSections,matchCommunity} from "../src/communities.js";
 
 
 const seeded=starterThreads[0];
@@ -33,9 +34,19 @@ assert.ok(!preferred.some(x=>x.name==="BrokeNCYDE"),"Negative preference must no
 assert.ok(!preferred.some(x=>x.name==="Kill Hannah"),"Negative preference must not become a recommendation");
 const users=similarAuthors(starterThreads,["Breathe Carolina"]);
 assert.ok(users.some(x=>x.name==="Daniel"));
-assert.equal(stats(starterThreads).threads,11);
-assert.equal(stats(starterThreads).posts,23);
+assert.equal(stats(starterThreads).threads,16);
+assert.equal(stats(starterThreads).posts,35);
 assert.ok(artistCatalog.length>25);
+assert.equal(communities.length,16);
+assert.ok(sceneSections.some(c=>c.id==="goth")&&sceneSections.some(c=>c.id==="poppunk"));
+assert.ok(communities.some(x=>x.id==="vampirefreaks"&&x.scenes.includes("goth")));
+assert.ok(communities.some(x=>x.id==="purevolume"&&x.kind.includes("not a forum")));
+assert.equal(matchCommunity("soEmo.co.uk"),"soemo");
+assert.equal(matchCommunity("Chorus.fm Forums"),"chorus");
+assert.equal(starterThreads.filter(x=>x.source==="soEmo.co.uk").length,4);
+assert.equal(starterThreads.filter(x=>x.source==="Chorus.fm Forums").length,1);
+assert.ok(starterThreads.every(x=>x.sourceUrl.startsWith("https://")));
+
 let r=await onRequestGet({request:new Request("https://scene.test/api/lastfm?status=1"),env:{}});
 assert.equal((await r.json()).configured,false);
 r=await onRequestGet({request:new Request("https://scene.test/api/lastfm?user=tester"),env:{}});
