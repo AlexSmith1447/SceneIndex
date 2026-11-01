@@ -5,7 +5,9 @@ const validURL=str=>{try{let u=new URL(str);return /^https?:$/.test(u.protocol)?
 const dateish=d=>/^\d{4}-\d{2}-\d{2}$/.test(String(d))?d:"";
 const slug=s=>normalize(s).replace(/ /g,"-").slice(0,65);
 const generatedId=()=>typeof crypto?.randomUUID==="function"?crypto.randomUUID():""+Date.now()+"-"+Math.random().toString(36).slice(2,10);
-const postKind=text=>/\b(recommend|suggest|check out|try listening|you might like)\b/i.test(text)?"recommendation":/\b(looking for|any recommendations|similar to|what bands)\b/i.test(text)?"request":"discussion";
+const postKind=text=>/\b(recommends?|recommended|suggests?|suggested|check out|try listening|you might like)\b/i.test(text)?"recommendation":/\b(looking for|any recommendations|similar to|what bands)\b/i.test(text)?"request":"discussion";
+const hash=source=>{let n=2166136261;for(const c of source){n^=c.charCodeAt(0);n=Math.imul(n,16777619)}return (n>>>0).toString(36)};
+const identifier=(url,title,date)=>url?"import-"+hash(url.replace(/\/?$/, "").toLowerCase()):"import-"+generatedId();
 function validate(raw){
   const obj=raw&&typeof raw==="object"?raw:{};
   const title=clamp(obj.title,200);
@@ -15,13 +17,15 @@ function validate(raw){
   if(!title)throw new Error("A thread title is required.");
   const p=Array.isArray(obj.posts)?obj.posts:[];
   if(!p.length)throw new Error("No posts were detected.");
-  return {id:"import-"+generatedId(),title,source,sourceUrl:url,board:clamp(obj.board||"Imported discussions",100),
+  return {id:identifier(url,title,date),title,source,sourceUrl:url,board:clamp(obj.board||"Imported discussions",100),
     date,year:Number(date.slice(0,4)),origin:"user-import",excerptOnly:!!obj.excerptOnly,
     tags:(Array.isArray(obj.tags)?obj.tags:[]).map(x=>slug(x)).filter(Boolean).slice(0,15),
     posts:p.slice(0,250).map((post,i)=>({
       id:"p-"+(i+1),author:clamp(post.author||"Unknown",70),date:dateish(post.date)||date,role:clamp(post.role||"Member",70),
       text:clamp(post.text,12000),kind:["discussion","request","recommendation"].includes(post.kind)?post.kind:postKind(post.text||""),
-      origin:"user-import",excluded:Array.isArray(post.excluded)?post.excluded.slice(0,20):[]
+      origin:"user-import",excluded:Array.isArray(post.excluded)?post.excluded.slice(0,20):[],
+      likedArtists:Array.isArray(post.likedArtists)?post.likedArtists.slice(0,30):undefined,
+      recommended:Array.isArray(post.recommended)?post.recommended.slice(0,30):undefined
     })).filter(p=>p.text.length>=3)
   };
 }
@@ -37,18 +41,23 @@ export function parseHTML(html,{source="Imported forum",sourceUrl="",title=""}={
   if(html.length>7_000_000)throw new Error("HTML file is too large (7 MB maximum).");
   const doc=new DOMParser().parseFromString(html,"text/html");
   // Supported first-pass selectors: XenForo, vBulletin, phpBB, Invision.
-  const selectors=[".message[data-author]",".message--post",".postbit",".postbody",".post",".ipsComment",".cPost",".post_message"];
+  const selectors=["article.message[data-author]","article.message--post","li.message[data-author]","li.message",
+    ".message--post",".postbit",".postbody",".ipsComment",".cPost",".post","div.post_message"];
   let nodes=[];
   for(const s of selectors){const matches=[...doc.querySelectorAll(s)];if(matches.length>=1){nodes=matches;break}}
   if(!nodes.length)throw new Error("No recognizable forum posts found. Try an HTML export from XenForo, vBulletin, phpBB or Invision, or use the manual importer.");
   const parsed=nodes.slice(0,250).map((node,i)=>{
-    const author=node.getAttribute("data-author")||text(node,".username, .message-name, .message-name a, .poster .name, .postprofile dt a, .author a, .cAuthorPane_author, .ipsType_break");
-    const content=node.querySelector(".message-content, .message-body, .bbWrapper, .content .message, .postcontent, .postentry, .postbody .content, .post_message, .ipsType_richText");
-    const body=human(content||node);
-    const dateRaw=node.querySelector("time")?.getAttribute("datetime")||node.querySelector("[data-time]")?.getAttribute("data-time")||"";
-    const dateMatch=dateRaw.match(/\d{4}-\d{2}-\d{2}/);
-    return {author:author||"Unknown",text:body,role:"Member",date:dateMatch?.[0],kind:postKind(body)};
-  }).filter(p=>p.text.length>=3);
+    const author=node.getAttribute("data-author")||text(node,".message-name a, .message-name, .username, .poster .name, .postprofile dt a, .author a, .cAuthorPane_author, .ipsType_break");
+    const content=node.querySelector(".bbWrapper, .message-content, .message-body, .postcontent, .postentry, .postbody .content, .ipsType_richText, .post_message");
+    // Remove quoted replies and signatures so mentions aren't attributed to the wrong member.
+    const clone=(content||node).cloneNode(true);
+    clone.querySelectorAll("blockquote, .bbCodeBlock, .signature, .message-signature, .js-signature, .quote, script, style, nav, form").forEach(el=>el.remove());
+    const body=human(clone);
+    const rawDate=node.querySelector("time")?.getAttribute("datetime")||node.querySelector("time")?.getAttribute("title")||node.querySelector("[data-time]")?.getAttribute("data-time")||"";
+    const dateMatch=String(rawDate).match(/\d{4}-\d{2}-\d{2}/);
+    const ts=Number(rawDate);const date= dateMatch?.[0]||(ts>1000000000?new Date(ts*1000).toISOString().slice(0,10):undefined);
+    return {author:author||"Unknown",text:body,role:"Member",date,kind:postKind(body)};
+  }).filter(p=>p.text.length>=10 && p.text.length<12001);
   const pageTitle=title||text(doc,"h1")||doc.title||"Imported thread";
   const firstDate=parsed.find(p=>p.date)?.date||new Date().toISOString().slice(0,10);
   if(!parsed.length)throw new Error("Post containers found, but no readable message text.");
