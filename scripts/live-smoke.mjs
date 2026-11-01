@@ -40,6 +40,12 @@ try{
    }catch(e){return {ok:false,status:0,error:e.message}}
  });
  console.log("ARCHIVE_PROXY_PROBE",JSON.stringify(rawProbe));
+ await page.locator(".ap-remote-pane textarea").fill("https://www.lpassociation.com/forum/threads/best-album-of-06.20379/");
+ await page.locator(".ap-remote-actions button").first().click();
+ const importStatus=await page.locator(".ap-remote-status").innerText({timeout:25000}).catch(()=>"No import status");
+ console.log("IMPORT_URL_RESULT",importStatus);
+ if(importStatus.includes("Imported 1 thread"))console.log("IMPORT_URL_SUCCESS");
+
  if(!rawProbe.ok)console.log("ARCHIVE_PROXY_WARNING",rawProbe.error);
 
  if(faults.length)throw Error("Frontend exceptions: "+faults.join(" | "));
