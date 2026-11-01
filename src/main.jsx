@@ -4,7 +4,7 @@ import {Search,Disc3,Archive,Upload,Heart,Bookmark,MessageSquare,ArrowRight,Chev
 import {starterThreads,artistCatalog,archives} from "./catalog.js";
 import PortalHome,{PortalAside,PortalHeaderArt} from "./PortalHome.jsx";
 import RemoteImport from "./RemoteImport.jsx";
-import {searchThreads,findArtists,threadArtists,buildGraph,discover,similarAuthors,stats,normalize} from "./engine.js";
+import {searchThreads,bestSnippet,findArtists,threadArtists,buildGraph,discover,similarAuthors,stats,normalize} from "./engine.js";
 import {loadThreads,saveThread,deleteThread,readPref,writePref,exportArchive} from "./storage.js";
 import {parseHTML,parseJSON,parseManual,parseArtistCSV} from "./importers.js";
 import "./styles.css";
@@ -18,11 +18,12 @@ function Pane({label,icon:Icon,children,extra}){return <section className="si-pa
 function Stamp({children}){return <span className="si-stamp">{children}</span>}
 function PersonAvatar({name}){return <span className="si-avatar" style={{background:colorFor(name)}}>{(name||"?").slice(0,1).toUpperCase()}</span>}
 function PageTrail({items,onHome}){return <div className="si-trail"><button onClick={onHome}>SceneIndex</button>{items.map((item,i)=><React.Fragment key={i}><ChevronRight size={12}/><span>{item}</span></React.Fragment>)}</div>}
-function ThreadRow({thread,onOpen,compact=false}){
+function ThreadRow({thread,onOpen,compact=false,matchQuery=""}){
  const authors=[...new Set((thread.posts||[]).map(p=>p.author))];
+ const snippet=matchQuery?bestSnippet(thread,matchQuery):{text:thread.posts?.[0]?.text||"No preview available.",author:thread.posts?.[0]?.author||"Unknown"};
  return <button className={"si-thread-row"+(compact?" compact":"")} onClick={()=>onOpen(thread.id)}>
   <span className="si-thread-icon"><MessageSquare size={18}/></span>
-  <span className="si-thread-details"><strong>{thread.title}</strong><small>{thread.source} <b>·</b> {thread.board} <b>·</b> {thread.date}</small><span className="si-thread-excerpt">{thread.posts?.[0]?.text||"No preview available."}</span></span>
+  <span className="si-thread-details"><strong>{thread.title}</strong><small>{thread.source} <b>·</b> {thread.board} <b>·</b> {thread.date}</small><span className="si-thread-excerpt">{matchQuery&&<b className="si-match-label">MATCH · {snippet.author}</b>} {snippet.text}</span></span>
   <span className="si-thread-meta"><strong>{thread.posts?.length||0}</strong><small>{(thread.posts?.length||0)===1?"post":"posts"}</small><span>{authors.length} {authors.length===1?"user":"users"}</span></span>
   <ChevronRight className="si-thread-arrow" size={17}/>
  </button>;
@@ -48,11 +49,12 @@ function SearchPage({threads,onOpen,onArtist,initialQuery=""}){
  const results=useMemo(()=>searchThreads(threads,{q,source,year,tag,sort}),[threads,q,source,year,tag,sort]);
  return <div><PageTrail items={["Forum search"]}/><div className="si-section-title"><div><h1>Search the archives</h1><p>Search thread titles, posts, usernames and recognized artists.</p></div></div>
   <Pane label="FIND DISCUSSIONS" icon={Search}><div className="si-search-panel">
-    <div className="si-wide-search"><Search size={17}/><input autoFocus value={q} onChange={e=>setQ(e.target.value)} placeholder="Band, user, phrase, genre, year..." aria-label="Search archive"/></div>
+    <div className="si-wide-search"><Search size={17}/><input autoFocus value={q} onChange={e=>setQ(e.target.value)} placeholder={'Try "The Medic Droid" -metalcore or Saosin…'} aria-label="Search archive"/></div>
     <div className="si-filters"><label>Source<select value={source} onChange={e=>setSource(e.target.value)}><option value="all">All sources</option>{sources.map(s=><option key={s}>{s}</option>)}</select></label><label>Year<select value={year} onChange={e=>setYear(e.target.value)}><option value="all">Any year</option>{years.map(y=><option key={y}>{y}</option>)}</select></label><label>Tag<select value={tag} onChange={e=>setTag(e.target.value)}><option value="all">Any tag</option>{tags.map(t=><option key={t}>{t}</option>)}</select></label><label>Order<select value={sort} onChange={e=>setSort(e.target.value)}><option value="relevance">Relevance</option><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select></label></div>
+  <div className="si-search-help">Use <code>"quoted phrases"</code> for exact matches, <code>-excluded</code> to remove a term, or combine artist and genre keywords. Results prioritize matching replies and source discussions.</div>
   </div></Pane>
   <div className="si-results-head"><strong>{results.length} matching {results.length===1?"thread":"threads"}</strong><span>Searches imported and sourced records only</span></div>
-  <div className="si-thread-table">{results.map(t=><ThreadRow key={t.id} thread={t} onOpen={onOpen}/>)}</div>
+  <div className="si-thread-table">{results.map(t=><ThreadRow key={t.id} thread={t} onOpen={onOpen} matchQuery={q}/>)}</div>
   {!results.length&&<div className="si-empty"><Search size={30}/><strong>No matching threads</strong><p>Try fewer filters or import more forum discussions.</p></div>}
  </div>;
 }
