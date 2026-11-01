@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {starterThreads,artistCatalog} from "../src/catalog.js";
 import {findArtists,threadArtists,searchThreads,bestSnippet,buildGraph,discover,similarAuthors,stats} from "../src/engine.js";
 import {onRequestGet} from "../functions/api/lastfm.js";
+import {onRequestGet as archiveRequest} from "../functions/api/archive.js";
 
 const seeded=starterThreads[0];
 assert.equal(seeded.posts.length,2);
@@ -43,4 +44,29 @@ try{
  assert.ok(fetchURL.includes("api_key=key"));
  assert.ok(!JSON.stringify(result).includes('"key"'));
 }finally{globalThis.fetch=previous}
-console.log("SceneIndex engine and optional Last.fm proxy tests passed.");
+const archiveHost="https://scene.test/api/archive";
+const notAllowed=await archiveRequest({request:new Request(archiveHost+"?"+new URLSearchParams({mode:"fetch",url:"https://127.0.0.1/secrets"}))});
+assert.equal(notAllowed.status,400);
+const disguised=await archiveRequest({request:new Request(archiveHost+"?"+new URLSearchParams({mode:"fetch",url:"https://www.lpassociation.com.evil.example/"}))});
+assert.equal(disguised.status,400);
+const originalArchiveFetch=globalThis.fetch;
+let fetched="";
+try{
+ globalThis.fetch=async url=>{
+  fetched=String(url);
+  if(fetched.includes("/cdx/search/cdx"))return new Response(JSON.stringify([
+   ["urlkey","timestamp","original","mimetype","statuscode","digest","length"],
+   ["com,example)/","20081231235959","http://example.com/","text/html","200","abc","123"]
+  ]),{status:200,headers:{"content-type":"application/json"}});
+  return new Response("<html><body>Saosin era archive</body></html>",{status:200,headers:{"content-type":"text/html"}});
+ };
+ const target="https://www.lpassociation.com/forum/threads/saosin.22761/";
+ const result=await archiveRequest({request:new Request(archiveHost+"?"+new URLSearchParams({mode:"fetch",url:target}))});
+ assert.equal(result.status,200);assert.ok((await result.json()).html.includes("Saosin era archive"));
+ assert.ok(fetched.startsWith("https://www.lpassociation.com/"));
+ const captures=await archiveRequest({request:new Request(archiveHost+"?"+new URLSearchParams({mode:"captures",url:target}))});
+ assert.equal(captures.status,200);
+ assert.equal((await captures.json()).captures[0].date,"2008-12-31");
+ assert.ok(fetched.startsWith("https://web.archive.org/cdx/search/cdx"));
+}finally{globalThis.fetch=originalArchiveFetch}
+console.log("SceneIndex engine, archive safety and Last.fm proxy tests passed.");
