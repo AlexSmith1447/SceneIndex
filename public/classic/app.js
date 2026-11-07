@@ -223,6 +223,8 @@ function navigate(page,query=null,{replace=false}={}){
 }
 function watch(id,{replace=false}={}){
  if(!isValidId(id))return;
+ const knownYear=Number(state.known[id]?.year)||0;
+ if(state.settings.time&&knownYear>Number(state.settings.year)){toast("This video was uploaded later.");return}
  collapseMenus();state.current=state.known[id]||{id,title:"Video",channel:"Unknown channel",year:0};
  state.known[id]=state.current;store("known",state.known);
  state.page="watch";state.watchTab="about";state.comments=[];state.commentsLoaded=false;
@@ -234,7 +236,13 @@ function watch(id,{replace=false}={}){
 }
 async function hydrate(id){
  try{const r=await fetch("../api/youtube?mode=video&id="+encodeURIComponent(id));const data=await r.json();
-  if(r.ok&&data.video&&state.current?.id===id){state.known[id]=data.video;state.current=data.video;store("known",state.known);render()}
+  if(r.ok&&data.video&&state.current?.id===id){
+    state.known[id]=data.video;store("known",state.known);
+    if(state.settings.time&&Number(data.video.year)>Number(state.settings.year)){
+      navigate("home");toast("This video was uploaded later.");return;
+    }
+    state.current=data.video;render();
+   }
  }catch{}
 }
 function save(id){
@@ -337,6 +345,19 @@ document.addEventListener("change",e=>{
  else return;
  store("settings",state.settings);render();
 });
+let gesture=null;
+document.addEventListener("touchstart",e=>{
+ if(window.innerWidth>640||e.touches.length!==1)return;
+ const t=e.touches[0];gesture={x:t.clientX,y:t.clientY};
+},{passive:true});
+document.addEventListener("touchend",e=>{
+ if(!gesture||window.innerWidth>640||e.changedTouches.length!==1)return;
+ const t=e.changedTouches[0],dx=t.clientX-gesture.x,dy=t.clientY-gesture.y;
+ if(Math.abs(dy)>Math.abs(dx)*.65){gesture=null;return}
+ if(!state.guideOpen&&gesture.x<28&&dx>65){state.guideOpen=true;render()}
+ else if(state.guideOpen&&dx< -65){state.guideOpen=false;render()}
+ gesture=null;
+},{passive:true});
 window.addEventListener("popstate",()=>{const u=new URL(location.href),id=u.searchParams.get("v");
  if(isValidId(id)){state.current=state.known[id]||{id,title:"Video",channel:"Unknown channel",year:0};state.page="watch"}
  else if(u.searchParams.has("c")){state.selection=u.searchParams.get("c");state.page="channel"}
