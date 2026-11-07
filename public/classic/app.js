@@ -8,7 +8,7 @@ const initialYear=Number(read("settings",DEFAULT)?.year)||2013;
 const state={
  settings:{...DEFAULT,...read("settings",DEFAULT),year:Math.max(2005,Math.min(2026,initialYear))},
  saved:read("saved",[]),history:read("history",[]),known:read("known",{}),
- page:"home",query:"",topic:"",liveResults:[],loading:false,notice:"",
+ page:"home",query:"",topic:"",liveResults:[],searchResults:[],loading:false,notice:"",
  configured:false,checking:true,video:null,comments:[],commentsLoaded:false,
  iteration:0
 };
@@ -74,7 +74,7 @@ function searchView(){
   const value=(v.title+" "+v.channel+" "+(v.tags||[]).join(" ")).toLowerCase();
   return value.includes(state.query.toLowerCase());
  });
- const remote=state.liveResults.filter(v=>(!state.query)||yearEligible(v));
+ const remote=state.searchResults.filter(yearEligible);
  const all=unique([...remote,...local]);
  return banner('Search: "'+state.query+'"',"Older videos first. Results are limited to videos still accessible.")+
  (state.notice?'<div class="notice">'+clean(state.notice)+'</div>':"")+
@@ -196,7 +196,8 @@ async function requestSearch(query,{discovery=false}={}){
   if(!response.ok)throw new Error(data.error||"YouTube search is unavailable");
   const results=(data.items||[]).map(normalizeSearchItem).filter(Boolean).filter(yearEligible);
   results.forEach(v=>state.known[v.id]=v);write("known",state.known);
-  state.liveResults=discovery?unique([...state.liveResults,...results]):results;
+  if(discovery){state.liveResults=unique([...state.liveResults,...results]);}
+  else{state.searchResults=results;state.liveResults=unique([...state.liveResults,...results]);}
   state.notice=results.length?("Added "+results.length+" live YouTube results."):"No embeddable videos found in this search.";
  }catch(error){state.notice=error.message||"Search failed";}
  finally{state.loading=false;render()}
@@ -255,7 +256,7 @@ $("#searchForm").addEventListener("submit",e=>{
  if(!raw)return;
  const id=videoFromUrl(raw)||(/^[a-zA-Z0-9_-]{11}$/.test(raw)?raw:null);
  if(id){openVideo(id);return}
- state.query=raw;navigate("search");
+ state.query=raw;state.searchResults=[];navigate("search");
  if(state.configured)requestSearch(raw);
 });
 document.addEventListener("change",e=>{
@@ -264,7 +265,7 @@ document.addEventListener("change",e=>{
  else if(el.id==="discoverySelect"){state.settings.discovery=el.value}
  else if(el.dataset.setting){state.settings[el.dataset.setting]=el.checked}
  else return;
- write("settings",state.settings);state.liveResults=state.liveResults.filter(yearEligible);
+ write("settings",state.settings);state.liveResults=state.liveResults.filter(yearEligible);state.searchResults=state.searchResults.filter(yearEligible);
  state.comments=[];state.commentsLoaded=false;render();
 });
 window.addEventListener("popstate",()=>{const u=new URL(location.href),id=u.searchParams.get("v");
