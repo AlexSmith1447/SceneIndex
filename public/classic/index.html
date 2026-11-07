@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f7f7f7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="YouTube '13">
+<meta name="description" content="An independent classic YouTube browsing experiment, with a 2013 interface and historical discovery.">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="stylesheet" href="./styles.css">
+<title>YouTube 2013 · Time Capsule</title>
+</head>
+<body>
+<div id="app">
+<header class="topbar">
+ <div class="top-inner">
+  <button class="hamburger" id="menuToggle" type="button" aria-label="Toggle menu">☰</button>
+  <button class="brand" type="button" id="brandHome" aria-label="Return home"><span class="brand-red">You</span><span class="brand-tube">Tube</span><small>2013</small></button>
+  <form id="searchForm" class="searchbar">
+   <input id="searchInput" placeholder="Search videos" autocomplete="off" aria-label="Search videos">
+   <button class="searchbtn" aria-label="Search" type="submit">⌕</button>
+  </form>
+  <button class="top-settings" type="button" id="settingsBtn" title="Settings">⚙ <span>Settings</span></button>
+ </div>
+</header>
+<div class="subbar"><div class="sub-inner"><span class="capsule-dot"></span><strong>TIME CAPSULE</strong><span class="sep">·</span><span id="dateLabel">December 2013</span><span class="sub-badge">Independent recreation · not affiliated with YouTube</span></div></div>
+<div class="layout">
+ <aside id="sidebar" class="sidebar">
+  <nav id="navLinks" aria-label="Main navigation">
+   <button class="navitem active" type="button" data-page="home"><span>⌂</span> Home</button>
+   <button class="navitem" type="button" data-page="discover"><span>✦</span> Discover</button>
+   <button class="navitem" type="button" data-page="saved"><span>★</span> Saved Videos</button>
+   <button class="navitem" type="button" data-page="history"><span>◷</span> History</button>
+  </nav>
+  <div class="sidebar-group"><strong>EXPLORE</strong><button type="button" data-topic="gaming">Gaming</button><button type="button" data-topic="animation">Animation</button><button type="button" data-topic="music">Music</button><button type="button" data-topic="internet">Internet classics</button><button type="button" data-topic="weird">Oddities</button></div>
+  <div class="sidebar-foot">Inspired by YouTube's earlier interface.<p><a href="../">Original SceneIndex forum</a></p></div>
+ </aside>
+ <main id="main" class="main" tabindex="-1">
+  <div class="loading-page">Loading the time capsule…</div>
+ </main>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+</div>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
