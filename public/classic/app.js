@@ -44,6 +44,7 @@ const dateText=v=>v.date?new Date(v.date+"T00:00:00Z").toLocaleDateString("en-US
 const card=(v,layout="grid")=>{
  const channel=channelFor(v),watched=state.history.some(x=>x.id===v.id);
  return '<div class="clip '+layout+(watched?' watched':'')+'">'+
+  '<div class="mobile-activity"><span class="activity-avatar">'+escapeHTML(channel.charAt(0).toUpperCase())+'</span><strong>'+escapeHTML(channel)+'</strong> uploaded <span>'+escapeHTML(dateText(v))+'</span></div>'+
   '<button type="button" data-watch="'+v.id+'" class="clip-image" aria-label="Watch '+escapeHTML(v.title)+'">'+
   '<img loading="lazy" src="'+thumbnail(v.id)+'" alt="" onerror="this.style.opacity=.28">'+
   '<span class="watch-overlay">▶</span></button>'+
@@ -82,6 +83,16 @@ function header(){
 function render(){
  header();guide();
  const main=$("#main");
+ // Preserve the active video player across tab changes, saving and comment loads.
+ if(state.page==="watch"&&state.current&&main.dataset.watchId===state.current.id&&main.querySelector(".watch-page")){
+   const template=document.createElement("div");template.innerHTML=watchPage();
+   for(const selector of [".watch-title-row",".watch-channel-line",".watch-toolbar",".watch-description",".desktop-comments",".mobile-watch-tabs",".mobile-suggested",".mobile-comments",".related-videos"]){
+     const next=template.querySelector(selector),old=main.querySelector(selector);
+     if(next&&old)old.replaceWith(next);
+   }
+   return;
+ }
+ main.dataset.watchId=state.page==="watch"&&state.current?state.current.id:"";
  switch(state.page){
   case "home":main.innerHTML=home();break;
   case "discover":main.innerHTML=browse();break;
