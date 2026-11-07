@@ -1,5 +1,21 @@
 # Classic YouTube / 2013 Time Capsule
 
+## November 7, 2026 — reference-led 2013 visual revision
+
+The interface now prioritizes reconstructing a signed-in mid-2013 YouTube layout rather than branding itself as an archive:
+- Desktop: YouTube-style 2013 top header/search, Upload link, signed-in profile, Guide sidebar, What to watch feed, understated 3-column video groups, contemporary-looking channel/watch/search layouts.
+- Mobile: the 2012–2013 YouTube iPhone app's dark header, left-swipe Guide drawer, full-width activity feed, and About/Suggested/Comments watch tabs. No modern bottom navigation.
+- The local profile defaults to WesleyPigeon330. It is editable in Settings and does **not** authenticate with YouTube.
+- Removed visible Time Capsule branding, year badges, an invented featured video, and custom promotional panels. Year restriction remains in Settings.
+- Video embeds remain mounted when switching information/comment tabs, avoiding playback restarts.
+- Old homepage UI is reference-led, not a validated pixel-identical replication. Historical thumbnails/views/comments cannot be inferred from current data.
+
+Visual research references:
+- YouTube homepage at Version Museum: https://www.versionmuseum.com/history-of/youtube-website
+- Official April 2013 signed-in homepage update: https://blog.youtube/news-and-events/coming-soon-more-videos-in-homepage-feed/
+- 2012/2013 iPhone app: https://www.macstories.net/news/youtube-for-ios-gets-iphone-5-and-airplay-support-ipad-version/
+- January 2013 signed-in layout: https://ics.uci.edu/~djpatter/classes/2013_01_INF134/journalExample.pdf
+
 ## Status (initial mobile/desktop PWA)
 
 A separate static app lives under /classic/ in the existing SceneIndex Pages deployment. The forum remains at /. Vite should copy public/classic/* to dist/classic/* using the existing build script.
@@ -9,7 +25,7 @@ A separate static app lives under /classic/ in the existing SceneIndex Pages dep
 - Standalone web app manifest, service worker and SVG icon
 - Official YouTube iframe playback, plus a link to the original watch page
 - Historical cutoff defaulting to 2013, local saved videos, viewing history, settings and discovery shuffling
-- A small source-checked starter catalogue, including Ze Frank's 2013 Teddy Has An Operation
+- A small source-checked starter catalogue, including Ze Frank's 2013 Teddy Has An Operation (as an ordinary video, not featured)
 - Local search and paste-YouTube-URL playback. Unknown upload dates are clearly labeled.
 - Optional public YouTube Data API v3 search, video metadata and surviving dated comment samples via Cloudflare Pages Function
 
