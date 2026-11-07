@@ -1,12 +1,12 @@
 {
-  "name": "YouTube 2013 · Time Capsule",
-  "short_name": "YouTube '13",
-  "description": "Classic 2013-style YouTube discovery",
+  "name": "YouTube",
+  "short_name": "YouTube",
+  "description": "Video browsing",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f7f7f7",
-  "theme_color": "#f7f7f7",
+  "background_color": "#eeeeee",
+  "theme_color": "#282828",
   "icons": [
     {
       "src": "./icon.svg",
