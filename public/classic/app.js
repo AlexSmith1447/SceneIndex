@@ -116,7 +116,7 @@ function home(){
  (followed.length?'<section class="feed-section">'+line("From your subscriptions")+tiles(group.slice(0,6))+'</section>':"")+
  '<section class="feed-section primary">'+line("Recommended for you")+tiles(first)+'</section>'+
  (more.length?'<section class="feed-section">'+line("More videos")+tiles(more)+'</section>':"")+
- (!state.api?'<p class="quiet-hint">Search is limited to the videos currently available in this library. <a href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer">YouTube ↗</a></p>':"")+
+
  '</div>';
 }
 const availableTopics=[
