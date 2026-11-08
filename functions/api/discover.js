@@ -80,7 +80,7 @@ export async function onRequestGet({request,env}){
   let details=new Map();
   if(raw.length){
    const more=await callYouTube("videos",{
-    part:"contentDetails,statistics,status",id:raw.map(v=>v.id.videoId).join(",")
+    part:"snippet,contentDetails,statistics,status",id:raw.map(v=>v.id.videoId).join(",")
    },key);
    details=new Map((more.items||[]).filter(x=>x.status?.embeddable!==false&&x.status?.privacyStatus==="public").map(x=>[x.id,x]));
   }
@@ -92,7 +92,9 @@ export async function onRequestGet({request,env}){
      title:x.snippet.title||"",
      channelTitle:x.snippet.channelTitle||"",
      channelId:x.snippet.channelId||"",
-     publishedAt:x.snippet.publishedAt||""
+     publishedAt:x.snippet.publishedAt||"",
+     description:detail.snippet?.description||x.snippet.description||"",
+     tags:Array.isArray(detail.snippet?.tags)?detail.snippet.tags.slice(0,30):[]
     },
     views:detail.statistics?.viewCount==null?null:Number(detail.statistics.viewCount),
     likes:detail.statistics?.likeCount==null?null:Number(detail.statistics.likeCount),
