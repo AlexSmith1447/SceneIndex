@@ -1,5 +1,6 @@
 import {seedVideos,topics,stableKey,isValidId,videoFromUrl,isBefore,thumbnail,normalizeSearchItem} from "./catalog.js";
 import {rankFeed,LANES,selectSourceTopics,recordImpressions} from "./discovery.js";
+import {recommendRelated,profileAffinity} from "./similarity.js";
 
 const $=s=>document.querySelector(s);
 const icon=(name,cls="")=>'<svg class="yt-icon '+cls+'" aria-hidden="true"><use href="./icons.svg#'+name+'"></use></svg>';
@@ -16,8 +17,10 @@ const state={
  known:{...load("known",{})},saved:load("saved",[]),history:load("history",[]),
  subscriptions:load("subscriptions",[]),reactions:load("reactions",{}),results:[],discovered:cachedPool,
  impressions:load("impressions",{}),loadingDiscovery:false,discoveryBatch:0,feedSize:36,discoveryError:"",
- lastRecommendationIds:[],loadCount:0,
+ lastRecommendationIds:[],loadCount:0,channelData:{},ratings:{},
  selection:"",current:null,comments:[],commentsLoaded:false,watchTab:"about",
+ commentsPageToken:null,commentsAll:false,commentsScanned:0,commentsLoading:false,commentsError:"",
+ descriptionExpanded:false,
  searchTab:"videos",filterOpen:false,searchSort:"relevance",searchChannels:[],channelsQuery:"",
  topic:"",loading:false,api:false,notice:"",guideOpen:false,accountOpen:false,searchOpen:false,shuffle:0
 };
@@ -170,9 +173,10 @@ function home(){
  const discovered=state.discovered.filter(yearOk);
  const hasRealPool=state.api&&discovered.length>0;
  const pool=hasRealPool?discovered:catalog();
+ const affinity=hasRealPool?profileAffinity(pool,state.history,state.known,state.reactions):new Map();
  const all=hasRealPool?rankFeed(pool,{
   year:state.settings.year,time:state.settings.time,limit:Math.min(110,Math.max(48,state.feedSize)),
-  history:state.history,known:state.known,saved:state.saved,likes:state.reactions,
+  history:state.history,known:state.known,saved:state.saved,likes:state.reactions,affinity,
   impressions:state.impressions,subscriptions:state.subscriptions,rotation:state.shuffle
  }):ordered(pool);
  const visible=all.slice(0,state.feedSize);
@@ -256,7 +260,7 @@ function commentsArea(){
 }
 function watchPage(){
  const v=state.current;if(!v)return home();
- const channel=channelFor(v),related=ordered(catalog().filter(x=>x.id!==v.id)).slice(0,12);
+ const channel=channelFor(v),related=recommendRelated(v,catalog(),{year:state.settings.year,time:state.settings.time,history:state.history,limit:14});
  const iframe='<div class="video-player"><iframe title="YouTube video player" src="https://www.youtube-nocookie.com/embed/'+v.id+'?playsinline=1&rel=0" allow="encrypted-media;accelerometer;gyroscope;picture-in-picture;fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>';
  const subscribed=isFollowed(channel),react=state.reactions[v.id]||"";
  const actionStrip='<div class="vintage-action-strip">'+
