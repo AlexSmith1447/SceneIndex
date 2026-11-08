@@ -1,5 +1,25 @@
 # Classic YouTube / 2013 Time Capsule
 
+## November 8, 2026 — iPhone 2013 UI fidelity pass
+
+Target reference: **Google YouTube for iOS, version 1.x (late 2012 through spring 2013)**, deliberately excluding the August 2013 version 2.0 redesign. This distinction is important: the old Videos/Channels search segment, brushed-metal gear and early slide-out channel Guide belong to the 1.x design.
+
+Implementation:
+- Custom vector icon atlas at public/classic/icons.svg, with 31 source-authored SVG symbols. A single reusable SVG file supplies the same visual elements to desktop and mobile. The gear is specifically illustrated with 2013-style teeth, metallic gradient, dark center, and recessed visual treatment; no emoji placeholder.
+- New high-priority stylesheet public/classic/period-accuracy.css draws layered dark gradients, inset dual-search tab controls, pixel-sized bevels, small typography, 2013 video rows and dark player action bar.
+- Mobile search has Videos/Channels segments and a gear-filter menu. Desktop search remains supported. Optional channel search uses documented YouTube Data API v3 rather than internal private endpoints.
+- Channel results have their own avatar/list layout. Video rows can show real duration badges and view counts when metadata is available. No fake metadata is invented.
+- Mobile side Guide is separate from the desktop Guide, and follows the period's account → Settings/Add Channels → Home Feed/subscriptions → From YouTube categories structure.
+- Mobile watch page includes period-inspired like/dislike/share SVG controls and recessed About/Suggested/Comments tabs. Local like/dislike interactions are not sent to YouTube. The official player remains unchanged inside its iframe.
+- The styles are a visual reconstruction based on screenshots, not yet verified pixel-for-pixel across iPhone sizes. Precise historical logo geometry, uploaded video avatars, native 2013 iOS status bar/keyboard, and official YouTube player chrome remain limitations.
+
+Primary period references:
+- MacStories, original interface and search segmented gear: https://www.macstories.net/stories/the-reality-check-of-googles-new-youtube-app/
+- MacStories, December 2012 player / Guide: https://www.macstories.net/news/youtube-for-ios-gets-iphone-5-and-airplay-support-ipad-version/
+- Original Google launch article: https://blog.google/products-and-platforms/products/youtube/introducing-new-youtube-app-for-your/
+- iMore original Guide: https://www.imore.com/youtube-iphone-reivew
+- April 2013 YouTube 1.3 update: https://www.engadget.com/2013-04-15-youtube-for-ios-gets-a-major-update.html
+
 ## November 7, 2026 — reference-led 2013 visual revision
 
 The interface now prioritizes reconstructing a signed-in mid-2013 YouTube layout rather than branding itself as an archive:
