@@ -36,5 +36,5 @@ export function normalizeSearchItem(item){
  if(!isValidId(id)||!s?.publishedAt)return null;
  const year=new Date(s.publishedAt).getUTCFullYear();
  if(!Number.isFinite(year))return null;
- return {id,title:s.title||"Untitled",channel:s.channelTitle||"Unknown channel",channelId:s.channelId||"",year,date:s.publishedAt.slice(0,10),topic:"explore",tags:[],live:true};
+ return {id,title:s.title||"Untitled",channel:s.channelTitle||"Unknown channel",channelId:s.channelId||"",year,date:s.publishedAt.slice(0,10),topic:"explore",tags:[],live:true,views:item.views??null,likes:item.likes??null,duration:item.duration||null};
 }
