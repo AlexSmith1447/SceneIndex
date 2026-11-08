@@ -145,3 +145,23 @@
  .iphone-guide-layout .guide-link.category-link .yt-icon{width:23px;height:23px;color:#b8b8b8}
  .iphone-guide-layout .mini-avatar{width:29px;height:29px}
 }
+
+/* Keep iPhone Safari from auto-enlarging forms on focus. The visual frame
+   stays period-sized; 16px is the browser's focus-zoom threshold. */
+@media(max-width:640px){
+ .header-search input,
+ .classic-settings input[type="text"],
+ .classic-settings select,
+ .search-page input,
+ .description input{
+  font-size:16px!important;
+ }
+ .header-search input{line-height:19px}
+ .feed-next{text-align:center;background:#eee;padding:14px 10px 23px}
+ .feed-next .classic-button{min-width:178px;font-size:12px;background:linear-gradient(#fff,#e7e7e7);padding:10px 20px}
+ .feed-loading{padding:26px 14px;color:#777;font-size:12px;background:#f8f8f8}
+}
+@media(min-width:641px){
+ .feed-next{margin:20px 0 8px;text-align:center}
+ .feed-loading{padding:28px 14px;color:#777}
+}
