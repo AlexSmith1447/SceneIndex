@@ -1,5 +1,23 @@
 # Classic YouTube / 2013 Time Capsule
 
+## November 8, 2026 — recommendation engine and mobile bug fixes
+
+The previous homepage rotated a manually selected 14-video starter catalog; that remains a fallback **only when the optional YouTube Data API is unavailable**. The new connected discovery implementation:
+- Uses Cloudflare Pages Function /api/discover to retrieve real videos within varying pre-2014 (default year 2013) publication windows. Search results are verified through videos.list for public, embeddable status and duration metadata.
+- Rotates across many broad subjects, not a hardcoded list of YouTubers, and labels source cohorts as familiar / adjacent / general / obscure.
+- Client-side rankFeed deliberately targets 40% familiar, 25% adjacent, 25% general, 10% obscure, when enough results exist; it reduces repeats, uses watched history and local reactions, and limits the number of videos from the same uploader.
+- Cold-start accounts are not assigned a fake personal interest. Candidate groups vary across categories and time windows.
+- Cloudflare cache stores public cohort responses for 24 hours. Browser cache holds up to 360 public video entries for 24 hours; at most 12 browser-initiated discovery requests occur daily. This avoids hitting platform search quotas too quickly.
+- Homepage displays freshly discovered results when present, with Load more and Refresh; it stops claiming a fixed handpicked set is a genuine recommendation feed.
+- iOS Safari search/settings inputs now use 16px text to stop automatic input-focus page zoom while preserving user pinch-to-zoom.
+- The gear icon has a filled bevelled metallic center.
+
+**Mandatory configuration for live discovery:** in the existing SceneIndex Cloudflare Pages project, add the encrypted YOUTUBE_API_KEY secret and enable YouTube Data API v3 for that key, then redeploy. Without this secret, the server cannot search the wider YouTube catalog; the homepage uses the starter fallback. No YouTube account access or login is required for this feature.
+
+**Provider quota note:** As of November 2026, Google's documentation describes a distinct default allowance of 100 search.list calls per day, plus 10,000 daily units for other API calls, subject to provider changes. The project uses public documented search.list and videos.list endpoints and does not bypass authentication, scrape private endpoints, or claim to reproduce the original YouTube ranking model.
+
+Visual and playback limitations are unchanged. Comments still need a separate reliability pass.
+
 ## November 8, 2026 — iPhone 2013 UI fidelity pass
 
 Target reference: **Google YouTube for iOS, version 1.x (late 2012 through spring 2013)**, deliberately excluding the August 2013 version 2.0 redesign. This distinction is important: the old Videos/Channels search segment, brushed-metal gear and early slide-out channel Guide belong to the 1.x design.
@@ -75,7 +93,7 @@ In the existing SceneIndex Cloudflare Pages project:
 5. Check /api/youtube?mode=status for configured:true.
 6. Open /classic/ and search, or use Discover > Find more on YouTube.
 
-Key stays server-side. The optional Pages Function only uses documented public YouTube Data API v3 methods (search.list, videos.list, commentThreads.list). Query results have a bounded cache. A search.list request costs 100 quota units, so an ordinary 10,000-unit daily quota supports at most around 100 uncached searches per day, ignoring other API calls. Do not silently fire dozens of requests.
+Key stays server-side. The optional Pages Function only uses documented public YouTube Data API v3 methods (search.list, videos.list, commentThreads.list). Query results have a bounded cache. Google currently documents a separate default pool of 100 search.list calls per day and a 10,000-unit quota for other endpoints. Cloudflare response caching avoids unnecessary duplicate searches. Do not silently fire dozens of requests.
 
 Comment display is a partial surviving sample, not a historical archive. Historical channel avatars are not fabricated. The actual current YouTube data may differ from what people saw in 2013.
 
