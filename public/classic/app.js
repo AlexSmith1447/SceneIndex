@@ -132,7 +132,7 @@ function render(){
  // Preserve the active video player across tab changes, saving and comment loads.
  if(state.page==="watch"&&state.current&&main.dataset.watchId===state.current.id&&main.querySelector(".watch-page")){
    const template=document.createElement("div");template.innerHTML=watchPage();
-   for(const selector of [".watch-title-row",".watch-channel-line",".watch-toolbar",".watch-description",".desktop-comments",".mobile-watch-tabs",".mobile-suggested",".mobile-comments",".related-videos"]){
+   for(const selector of [".vintage-action-strip",".watch-numbers",".watch-title-row",".watch-channel-line",".watch-toolbar",".watch-description",".desktop-comments",".mobile-watch-tabs",".mobile-suggested",".mobile-comments",".related-videos"]){
      const next=template.querySelector(selector),old=main.querySelector(selector);
      if(next&&old)old.replaceWith(next);
    }
