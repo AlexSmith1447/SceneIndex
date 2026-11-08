@@ -20,7 +20,7 @@ const state={
  lastRecommendationIds:[],loadCount:0,channelData:{},ratings:{},
  selection:"",current:null,comments:[],commentsLoaded:false,watchTab:"about",
  commentsPageToken:null,commentsAll:false,commentsScanned:0,commentsLoading:false,commentsError:"",
- descriptionExpanded:false,
+ descriptionExpanded:false,channelTab:"videos",
  searchTab:"videos",filterOpen:false,searchSort:"relevance",searchChannels:[],channelsQuery:"",
  topic:"",loading:false,api:false,notice:"",guideOpen:false,accountOpen:false,searchOpen:false,shuffle:0
 };
@@ -220,9 +220,19 @@ function listPage(title,list,canClear=false){
 function channelPage(){
  const name=state.selection;
  const list=channelVideos(name);
- return '<div class="channel-shell"><div class="channel-banner"></div><div class="channel-head"><div class="channel-avatar">'+escapeHTML((name||"?").charAt(0).toUpperCase())+'</div><div><h1>'+escapeHTML(name)+'</h1><div class="minor-line">Videos</div></div>'+
- '<button type="button" class="subscribe-button '+(isFollowed(name)?"subscribed":"")+'" data-subscribe="'+escapeHTML(name)+'">'+(isFollowed(name)?'✓ Subscribed':'+ Subscribe')+'</button></div>'+
- '<div class="channel-tabs"><span class="active-tab">Videos</span></div><div class="channel-videos">'+tiles(ordered(list))+'</div></div>';
+ const found=list.find(v=>v.channelId)?.channelId||((state.current&&state.current.channel===name)?state.current.channelId:null);
+ const ch=found?state.channelData[found]:null;
+ const avatar=ch?.avatar?'<img src="'+escapeHTML(ch.avatar)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':escapeHTML((name||"?").charAt(0).toUpperCase());
+ const about=ch?
+  '<section class="channel-about"><h2>About '+escapeHTML(ch.name||name)+'</h2><p>'+escapeHTML(ch.description||"No description available.")+'</p>'+
+  (ch.createdAt?'<div>Joined '+escapeHTML(ch.createdAt.slice(0,10))+'</div>':"")+
+  (ch.subscribers!=null?'<div>'+Number(ch.subscribers).toLocaleString()+' subscribers</div>':"")+
+  '<small>Current public channel information; historical profile is not archived.</small></section>':
+  '<section class="channel-about"><p>Channel details are unavailable.</p></section>';
+ return '<div class="channel-shell"><div class="channel-banner"></div><div class="channel-head"><div class="channel-avatar">'+avatar+'</div><div><h1>'+escapeHTML(name)+'</h1><div class="minor-line">Videos</div></div>'+
+ '<button type="button" class="subscribe-button '+(isFollowed(name)?"subscribed":"")+'" data-subscribe="'+escapeHTML(name)+'">'+(isFollowed(name)?icon("check")+' Subscribed':icon("plus")+' Subscribe')+'</button></div>'+
+ '<div class="channel-tabs"><button type="button" data-channel-tab="videos" class="'+(state.channelTab==="videos"?"selected":"")+'">Videos</button><button type="button" data-channel-tab="about" class="'+(state.channelTab==="about"?"selected":"")+'">About</button></div>'+
+ (state.channelTab==="about"?about:'<div class="channel-videos">'+tiles(ordered(list))+'</div>')+'</div>';
 }
 function searchPage(){
  const items=searchEntries();
@@ -280,6 +290,12 @@ function commentsArea(){
 function watchPage(){
  const v=state.current;if(!v)return home();
  const channel=channelFor(v),related=recommendRelated(v,catalog(),{year:state.settings.year,time:state.settings.time,history:state.history,limit:14});
+ const channelInfo=v.channelId?state.channelData[v.channelId]:null;
+ const rating=state.ratings[v.id]||null;
+ const totalRating=rating?rating.likes+rating.dislikes:0;
+ const green=totalRating?Math.max(0,Math.min(100,Math.round((rating.likes/totalRating)*100))):0;
+ const bar=totalRating?'<div class="vintage-rating"><div class="rating-bar" title="Estimated vote ratio from Return YouTube Dislike"><span class="rating-green" style="width:'+green+'%"></span><span class="rating-red" style="width:'+(100-green)+'%"></span></div>'+
+  '<div class="rating-details"><span>'+Number(rating.dislikes).toLocaleString()+' estimated dislikes</span><a href="https://returnyoutubedislike.com" target="_blank" rel="noopener noreferrer">RYD estimate</a></div></div>':'';
  const iframe='<div class="video-player"><iframe title="YouTube video player" src="https://www.youtube-nocookie.com/embed/'+v.id+'?playsinline=1&rel=0" allow="encrypted-media;accelerometer;gyroscope;picture-in-picture;fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>';
  const subscribed=isFollowed(channel),react=state.reactions[v.id]||"";
  const actionStrip='<div class="vintage-action-strip">'+
@@ -287,15 +303,25 @@ function watchPage(){
   '<button type="button" class="'+(react==="dislike"?"pressed":"")+'" data-react="dislike" aria-label="Dislike video">'+icon("dislike")+'</button>'+
   '<button type="button" data-action="share-video" aria-label="Share video">'+icon("share")+'</button></div>';
  const info='<div class="watch-title-row"><h1>'+escapeHTML(v.title||"Video")+'</h1></div>'+
- '<div class="watch-channel-line"><div class="video-channel-avatar">'+escapeHTML(channel.charAt(0).toUpperCase())+'</div>'+
+ '<div class="watch-channel-line"><div class="video-channel-avatar">'+(channelInfo?.avatar?'<img src="'+escapeHTML(channelInfo.avatar)+'" loading="lazy" alt="" referrerpolicy="no-referrer">':escapeHTML(channel.charAt(0).toUpperCase()))+'</div>'+
  '<div class="watch-channel-name"><button data-channel="'+escapeHTML(channel)+'">'+escapeHTML(channel)+'</button>'+
  '<div class="watch-published">'+escapeHTML(dateText(v))+'</div></div>'+
  '<button data-subscribe="'+escapeHTML(channel)+'" class="subscribe-button '+(subscribed?'subscribed':'')+'">'+(subscribed?icon("check")+' Subscribed':icon("plus")+' Subscribe')+'</button></div>'+
  '<div class="watch-numbers"><div class="watch-likes">'+(v.likes!==null&&v.likes!==undefined?Number(v.likes).toLocaleString()+" likes":"")+'</div>'+
- (v.views!==null&&v.views!==undefined?'<div class="watch-views">'+Number(v.views).toLocaleString()+'<small>views</small></div>':"")+'</div>'+
+ (v.views!==null&&v.views!==undefined?'<div class="watch-views">'+Number(v.views).toLocaleString()+'<small>views</small></div>':"")+'</div>'+bar+
  '<div class="watch-toolbar"><div class="watch-toolbar-left"><button class="'+(state.watchTab==="about"?'current':'')+'" data-tab="about">About</button><button data-tab="share">Share</button><button data-tab="add">Add to</button></div></div>';
- const about='<div class="description">'+(v.date?'<p>Published on '+escapeHTML(dateText(v))+'</p>':'')+
- (v.note?'<p>'+escapeHTML(v.note)+'</p>':"")+'</div>';
+ const description=String(v.description||v.note||"").trim();
+ const snippet=state.descriptionExpanded?description:description.slice(0,850);
+ const about='<div class="description">'+
+  (v.date?'<p class="description-date"><strong>Published on '+escapeHTML(dateText(v))+'</strong></p>':"")+
+  (description?'<p class="video-description">'+escapeHTML(snippet)+(description.length>850&&!state.descriptionExpanded?'…':"")+'</p>'+
+   (description.length>850?'<button type="button" class="description-more" data-action="expand-description">'+(state.descriptionExpanded?"Show less":"Show more")+'</button>':""):
+  '<p class="muted">No description available.</p>')+
+  (v.views!=null?'<div class="video-about-stat">'+Number(v.views).toLocaleString()+' views</div>':"")+
+  (v.likes!=null?'<div class="video-about-stat">'+Number(v.likes).toLocaleString()+' likes</div>':"")+
+  (rating?'<div class="video-about-stat">'+Number(rating.dislikes).toLocaleString()+' estimated dislikes <a href="https://returnyoutubedislike.com" target="_blank" rel="noopener noreferrer">(RYD)</a></div>':"")+
+  '<div class="video-about-channel">Uploaded by <button type="button" data-channel="'+escapeHTML(channel)+'">'+escapeHTML(channel)+'</button></div>'+
+  '</div>';
  const details=state.watchTab==="share"?'<div class="description"><input readonly aria-label="Video link" value="'+escapeHTML(location.href)+'"><button class="classic-button" data-action="copy-link">Copy</button></div>':
  state.watchTab==="add"?'<div class="description"><button class="classic-button" data-save="'+v.id+'">'+(isSaved(v.id)?icon("check")+' Added to Watch later':icon("plus")+' Watch later')+'</button></div>':about;
  return '<div class="watch-page"><div class="watch-main">'+actionStrip+iframe+
@@ -527,7 +553,7 @@ function route(){
  navigate(["home","discover","subscriptions","saved","history","settings"].includes(p)?p:"home",null,{replace:true});
 }
 document.addEventListener("click",async e=>{
- const el=e.target.closest("button[data-action],button[data-page],button[data-watch],button[data-save],button[data-subscribe],button[data-channel],button[data-tab],button[data-topic],button[data-search-tab],button[data-sort],button[data-react],button[data-replies]");
+ const el=e.target.closest("button[data-action],button[data-page],button[data-watch],button[data-save],button[data-subscribe],button[data-channel],button[data-tab],button[data-topic],button[data-search-tab],button[data-sort],button[data-react],button[data-replies],button[data-channel-tab]");
  if(!el){if(state.accountOpen&&!e.target.closest("#account-menu")){state.accountOpen=false;header()}return}
  if(el.dataset.watch){watch(el.dataset.watch);return}
  if(el.dataset.save){save(el.dataset.save);return}
@@ -538,7 +564,13 @@ document.addEventListener("click",async e=>{
   store("reactions",state.reactions);render();return;
  }
  if(el.dataset.subscribe){subscribe(el.dataset.subscribe);return}
- if(el.dataset.channel){state.selection=el.dataset.channel;navigate("channel");return}
+ if(el.dataset.channel){
+  state.selection=el.dataset.channel;state.channelTab="videos";navigate("channel");
+  const candidate=channelVideos(state.selection).find(v=>v.channelId);
+  if(candidate&&state.api)hydrateChannel(candidate.channelId);
+  return
+ }
+ if(el.dataset.channelTab){state.channelTab=el.dataset.channelTab;render();return}
  if(el.dataset.page){navigate(el.dataset.page);return}
  if(el.dataset.tab){
   state.watchTab=el.dataset.tab;render();
@@ -578,6 +610,7 @@ document.addEventListener("click",async e=>{
    return;
   case "more-videos":await fetchDiscovery();return;
   case "clear-history":state.history=[];store("history",[]);render();return;
+  case "expand-description":state.descriptionExpanded=!state.descriptionExpanded;render();return;
   case "load-comments":await fetchComments({reset:true});return;
   case "load-more-comments":await fetchComments();return;
   case "comments-all":state.commentsAll=true;await fetchComments({reset:true});return;
