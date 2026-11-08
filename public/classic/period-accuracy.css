@@ -1,3 +1,6 @@
+.original-desktop-logo{display:block;width:97px;height:auto;max-height:39px;object-fit:contain}
+@media(min-width:641px){.yt-brand:has(.original-desktop-logo:not([style*="none"])) .yt-word,.yt-brand:has(.original-desktop-logo:not([style*="none"])) .yt-box{display:none}}
+@media(max-width:640px){.original-desktop-logo{display:none}}
 /* 2012–early-2013 Google YouTube iPhone app visual pass.
    Intentional: period gradients, 1px bevels, bitmap-like icon weights,
    inset segmented controls, thin dividers. Responsive to modern iPhone widths. */
