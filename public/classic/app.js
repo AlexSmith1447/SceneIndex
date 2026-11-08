@@ -1,6 +1,7 @@
 import {seedVideos,topics,stableKey,isValidId,videoFromUrl,isBefore,thumbnail,normalizeSearchItem} from "./catalog.js";
 
 const $=s=>document.querySelector(s);
+const icon=(name,cls="")=>'<svg class="yt-icon '+cls+'" aria-hidden="true"><use href="./icons.svg#'+name+'"></use></svg>';
 const escapeHTML=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 const store=(key,value)=>{try{localStorage.setItem(stableKey+"."+key,JSON.stringify(value))}catch{}};
 const load=(key,fallback)=>{try{const v=localStorage.getItem(stableKey+"."+key);return v?JSON.parse(v):fallback}catch{return fallback}};
@@ -11,6 +12,7 @@ const state={
  known:{...load("known",{})},saved:load("saved",[]),history:load("history",[]),
  subscriptions:load("subscriptions",[]),results:[],discovered:[],
  selection:"",current:null,comments:[],commentsLoaded:false,watchTab:"about",
+ searchTab:"videos",filterOpen:false,searchSort:"relevance",searchChannels:[],channelsQuery:"",
  topic:"",loading:false,api:false,notice:"",guideOpen:false,accountOpen:false,searchOpen:false,shuffle:0
 };
 if(!Array.isArray(state.saved))state.saved=[];
@@ -36,6 +38,25 @@ const ordered=list=>{
  });
 };
 const channelFor=v=>String(v.channel||"Unknown");
+const formatViews=n=>Number.isFinite(Number(n))&&n!==undefined&&n!==null&&Number(n)>=0?Number(n).toLocaleString("en-US")+" views":"";
+const searchEntries=()=>{
+ const q=state.query.toLowerCase().trim();
+ const local=catalog().filter(v=>(v.title+" "+v.channel+" "+(v.tags||[]).join(" ")).toLowerCase().includes(q));
+ const list=unique([...state.results.filter(yearOk),...local]);
+ if(state.searchSort==="date")list.sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+ if(state.searchSort==="views")list.sort((a,b)=>(Number(b.views)||0)-(Number(a.views)||0));
+ return list;
+};
+const channelResults=()=>{
+ const map=new Map();
+ for(const v of searchEntries()){
+  const name=channelFor(v),key=v.channelId||name;
+  if(!map.has(key))map.set(key,{name,channelId:v.channelId||"",thumbnail:"",count:0,source:"video"});
+  map.get(key).count++;
+ }
+ for(const ch of state.searchChannels)map.set(ch.channelId||ch.name,{...map.get(ch.channelId||ch.name),...ch,source:"channel"});
+ return [...map.values()].filter(ch=>!state.query||ch.name.toLowerCase().includes(state.query.toLowerCase())||ch.source==="channel");
+};
 const channelList=()=>[...new Set(catalog().map(channelFor))].sort();
 const channelVideos=name=>catalog().filter(v=>channelFor(v)===name);
 const isSaved=id=>state.saved.includes(id);
@@ -50,27 +71,34 @@ const card=(v,layout="grid")=>{
   '<span class="watch-overlay">▶</span></button>'+
   '<div class="clip-copy"><button type="button" data-watch="'+v.id+'" class="clip-title">'+escapeHTML(v.title||"Untitled")+'</button>'+
   '<div class="clip-byline">by <button type="button" data-channel="'+escapeHTML(channel)+'">'+escapeHTML(channel)+'</button></div>'+
-  '<div class="clip-detail">'+escapeHTML(dateText(v))+'</div></div>'+
+  '<div class="clip-detail">'+escapeHTML(formatViews(v.views)||dateText(v))+'</div></div>'+
   '<button type="button" class="clip-later" title="'+(isSaved(v.id)?"Remove from Watch later":"Watch later")+'" data-save="'+v.id+'">'+(isSaved(v.id)?"✓":"+ ")+'◷</button>'+
  '</div>';
 };
 const tiles=(list,style="grid")=>list.length?'<div class="clip-list '+style+'">'+list.map(x=>card(x,style)).join("")+'</div>':'<div class="blank">No videos found.</div>';
 const line=(title,right="")=>'<div class="section-title"><strong>'+escapeHTML(title)+'</strong>'+(right?'<span>'+escapeHTML(right)+'</span>':"")+'</div>';
 function guide(){
- const item=(label,page,symbol)=>'<button type="button" data-page="'+page+'" class="guide-link '+(state.page===page?'selected':'')+'"><span class="guide-icon">'+symbol+'</span>'+label+'</button>';
+ const item=(label,page,symbol)=>'<button type="button" data-page="'+page+'" class="guide-link '+(state.page===page?'selected':'')+'"><span class="guide-icon">'+icon(symbol)+'</span>'+label+'</button>';
  const sub=state.subscriptions.slice(0,9).map(n=>'<button type="button" data-channel="'+escapeHTML(n)+'" class="guide-link"><span class="mini-avatar">'+escapeHTML(n.charAt(0).toUpperCase())+'</span><span class="guide-channel">'+escapeHTML(n)+'</span></button>').join("");
  $("#guide").innerHTML=
  '<div class="mobile-identity"><span class="account-avatar">'+escapeHTML(state.username.slice(0,1).toUpperCase())+'</span><strong>'+escapeHTML(state.username)+'</strong><button data-page="settings">▾</button></div>'+
  '<div class="guide-section first">'+
- item("What to watch","home","⌂")+item("My subscriptions","subscriptions","▤")+item("History","history","◷")+item("Watch later","saved","◴")+
- '</div><div class="guide-section">'+item("Browse channels","discover","▦")+
+ item("What to watch","home","home")+item("My subscriptions","subscriptions","video")+item("History","history","history")+item("Watch later","saved","clock")+
+ '</div><div class="guide-section">'+item("Browse channels","discover","channels")+
  '<div class="guide-caption">SUBSCRIPTIONS</div>'+sub+
- '<button class="guide-link manage" type="button" data-page="subscriptions"><span class="guide-icon">⊕</span>Manage subscriptions</button></div>'+
- '<div class="guide-section mobile-only">'+item("Settings","settings","⚙")+'</div>';
+ '<button class="guide-link manage" type="button" data-page="subscriptions"><span class="guide-icon">'+icon("plus")+'</span>Manage subscriptions</button></div>'+
+ '<div class="guide-section mobile-only">'+item("Settings","settings","gear")+'</div>';
  $("#guide").classList.toggle("open",state.guideOpen);
  $("#guide-backdrop").hidden=!state.guideOpen;
 }
 function header(){
+ const detailTitle=state.page==="search"?state.query:state.page==="channel"?state.selection:
+  state.page==="settings"?"Settings":state.page==="discover"?"Browse channels":
+  state.page==="history"?"History":state.page==="saved"?"Watch later":
+  state.page==="subscriptions"?"My subscriptions":"";
+ $(".site-header").classList.toggle("detail-header",Boolean(detailTitle)||state.page==="watch");
+ $(".site-header").classList.toggle("screen-title-header",Boolean(detailTitle));
+ $("#mobile-screen-title").textContent=detailTitle;
  $(".account-label").textContent=state.username;
  $(".account-avatar").textContent=state.username.slice(0,1).toUpperCase();
  $(".header-search input").value=state.query;
@@ -302,7 +330,8 @@ async function searchSubmit(value){
  const term=value.trim();if(!term)return;
  const id=videoFromUrl(term)||(isValidId(term)?term:null);
  if(id){watch(id);return}
- state.results=[];state.query=term;navigate("search",term);if(state.api)await fetchSearch(term);
+ state.results=[];state.searchChannels=[];state.channelsQuery="";
+ state.searchTab="videos";state.searchSort="relevance";state.query=term;navigate("search",term);if(state.api)await fetchSearch(term);
 }
 function route(){
  const u=new URL(location.href),id=u.searchParams.get("v"),q=u.searchParams.get("q"),c=u.searchParams.get("c");
