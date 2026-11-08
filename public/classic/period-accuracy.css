@@ -3,6 +3,8 @@
    inset segmented controls, thin dividers. Responsive to modern iPhone widths. */
 .yt-icon{display:inline-block;width:20px;height:20px;vertical-align:middle;flex:none;color:inherit;overflow:visible}
 .yt-icon use{pointer-events:none}
+.iphone-guide-layout{display:none}
+.desktop-guide-layout{display:block}
 .guide-icon .yt-icon{width:17px;height:17px;filter:drop-shadow(0 1px 0 #ffffff65)}
 .watch-overlay .yt-icon{width:17px;height:17px}
 .clip-later .yt-icon{width:14px;height:14px}
@@ -124,4 +126,19 @@
  .watch-likes{font-size:10px}
  .watch-channel-line .subscribe-button .yt-icon{width:12px;height:12px}
  .video-player{min-height:200px}
+}
+
+/* Dedicated 2013 iPhone Guide; distinct from desktop 2013 YouTube Guide */
+@media(max-width:640px){
+ .desktop-guide-layout{display:none}
+ .iphone-guide-layout{display:block}
+ .iphone-guide-layout .mobile-identity{border:0;border-bottom:1px solid #161616;border-radius:0;width:100%;text-align:left;color:#e8e8e8}
+ .iphone-guide-layout .mobile-identity .guide-expand{color:#bbb;font-size:17px;margin-left:auto;padding-right:8px}
+ .iphone-guide-layout .guide-section.account-links{background:#262626}
+ .iphone-guide-layout .guide-section.account-links .guide-link{background:linear-gradient(#323232,#292929)}
+ .iphone-guide-layout .guide-caption{text-align:left;background:linear-gradient(#4b4b4b,#303030);color:#d0d0d0;font-size:11px;min-height:23px;line-height:13px;letter-spacing:0;padding:5px 12px}
+ .iphone-guide-layout .guide-link{background:linear-gradient(#363636,#303030);color:#d4d4d4;min-height:48px;height:48px;font-size:13px;gap:14px;padding-left:15px}
+ .iphone-guide-layout .guide-link.selected{border-left:0;padding-left:15px;background:linear-gradient(#242424,#151515);font-weight:bold;color:#fff}
+ .iphone-guide-layout .guide-link.category-link .yt-icon{width:23px;height:23px;color:#b8b8b8}
+ .iphone-guide-layout .mini-avatar{width:29px;height:29px}
 }
