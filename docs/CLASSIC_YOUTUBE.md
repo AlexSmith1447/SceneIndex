@@ -1,5 +1,31 @@
 # Classic YouTube / 2013 Time Capsule
 
+## November 8, 2026 — recommendations, watch details and comments revision
+
+The original keyword-cohort ranker remains as the source-discovery fallback, but is no longer the entire recommendation logic. The browser now uses a TF-IDF + cosine content similarity baseline adapted from the MIT-licensed **WatchLens** project (similarity.py), plus the existing exposure-aware browsing and diversity controls. Similarity considers video titles, descriptions and tags. Recent watched videos build a local content-interest vector. Watch pages use video-to-video similarity to select relevant recommendations. This is not a trained YouTube-scale collaborative model; those require a large interaction corpus and additional infrastructure.
+
+- Similarity implementation: public/classic/similarity.js
+- Source: https://github.com/WatchLens/WatchLens
+- MIT notice: public/classic/THIRD_PARTY_NOTICES.txt
+- The Cloudflare discovery source now fetches public description and tag metadata from documented YouTube APIs; current Cloudflare and browser discovery caches were versioned to avoid old incomplete metadata.
+
+Comment fixes:
+- For period comments (default), the API now checks up to four 100-thread pages per click rather than only the first. An older year cutoff is applied to top-level comments *and* previews of surviving replies. Load more uses continuation tokens.
+- A second "All comments" tab shows modern and older surviving comments without the cutoff; this is not a period snapshot. Some old videos may still require many pages before old comments appear; deleted comments cannot be restored.
+- Real authorProfileImageUrl, names, publish dates and likes are now shown; no invented profile photos. Some available replies are shown, with an option to request more for the selected thread.
+- Requests are bounded, cached and limited to documented commentThreads.list / comments.list methods.
+
+Watch and channel details:
+- The About section now displays available video description, publication date, current view count, current like count and uploader.
+- A green/red vintage ratio bar is supplied from **Return YouTube Dislike** estimated like/dislike data when available, with a linked attribution. Estimates are not official counts and must *not* be mistaken for how many likes/dislikes the video had in 2013. The current YouTube Data API does not publish public dislike counts.
+- The user may see the current channel avatar, description and subscription statistic. **Archival 2013 channel avatars are not implemented.** Avoid silently presenting current imagery as a verified historical archive.
+- The app's local Like/Dislike button interactions are not posted to YouTube.
+- The official YouTube iframe player is unchanged, due to required official controls and branding.
+
+The user already configured YOUTUBE_API_KEY in their Cloudflare Pages project. No additional YouTube secret is required for these changes. An optional separate Return YouTube Dislike API endpoint is publicly accessible via functions/api/ratings.js.
+
+Outstanding limitations: the recommendation candidate pool is still mostly gathered through subject searches and is much smaller than YouTube's proprietary graph. WatchLens RecBole collaborative models require a separate Python backend and interaction dataset; copying the model without data would not create YouTube-quality recommendations. Historical channel image restoration, richer reply pagination, and the modern player styling remain later work.
+
 ## November 8, 2026 — recommendation engine and mobile bug fixes
 
 The previous homepage rotated a manually selected 14-video starter catalog; that remains a fallback **only when the optional YouTube Data API is unavailable**. The new connected discovery implementation:
