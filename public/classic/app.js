@@ -97,15 +97,23 @@ const tiles=(list,style="grid")=>list.length?'<div class="clip-list '+style+'">'
 const line=(title,right="")=>'<div class="section-title"><strong>'+escapeHTML(title)+'</strong>'+(right?'<span>'+escapeHTML(right)+'</span>':"")+'</div>';
 function guide(){
  const item=(label,page,symbol)=>'<button type="button" data-page="'+page+'" class="guide-link '+(state.page===page?'selected':'')+'"><span class="guide-icon">'+icon(symbol)+'</span>'+label+'</button>';
- const sub=state.subscriptions.slice(0,9).map(n=>'<button type="button" data-channel="'+escapeHTML(n)+'" class="guide-link"><span class="mini-avatar">'+escapeHTML(n.charAt(0).toUpperCase())+'</span><span class="guide-channel">'+escapeHTML(n)+'</span></button>').join("");
- $("#guide").innerHTML=
- '<div class="mobile-identity"><span class="account-avatar">'+escapeHTML(state.username.slice(0,1).toUpperCase())+'</span><strong>'+escapeHTML(state.username)+'</strong><button data-page="settings">▾</button></div>'+
- '<div class="guide-section first">'+
- item("What to watch","home","home")+item("My subscriptions","subscriptions","video")+item("History","history","history")+item("Watch later","saved","clock")+
- '</div><div class="guide-section">'+item("Browse channels","discover","channels")+
- '<div class="guide-caption">SUBSCRIPTIONS</div>'+sub+
- '<button class="guide-link manage" type="button" data-page="subscriptions"><span class="guide-icon">'+icon("plus")+'</span>Manage subscriptions</button></div>'+
- '<div class="guide-section mobile-only">'+item("Settings","settings","gear")+'</div>';
+ const sub=state.subscriptions.slice(0,14).map(n=>'<button type="button" data-channel="'+escapeHTML(n)+'" class="guide-link"><span class="mini-avatar">'+escapeHTML(n.charAt(0).toUpperCase())+'</span><span class="guide-channel">'+escapeHTML(n)+'</span></button>').join("");
+ const category=(name,topic,symbol)=>'<button type="button" data-topic="'+topic+'" class="guide-link category-link"><span class="guide-icon">'+icon(symbol)+'</span>'+escapeHTML(name)+'</button>';
+ const desktop='<div class="desktop-guide-layout"><div class="guide-section first">'+
+  item("What to watch","home","home")+item("My subscriptions","subscriptions","video")+item("History","history","history")+item("Watch later","saved","clock")+
+  '</div><div class="guide-section">'+item("Browse channels","discover","channels")+
+  '<div class="guide-caption">SUBSCRIPTIONS</div>'+sub+
+  '<button class="guide-link manage" type="button" data-page="subscriptions"><span class="guide-icon">'+icon("plus")+'</span>Manage subscriptions</button></div></div>';
+ const mobile='<div class="iphone-guide-layout">'+
+  '<button type="button" data-page="settings" class="mobile-identity"><span class="account-avatar">'+escapeHTML(state.username.slice(0,1).toUpperCase())+'</span><strong>'+escapeHTML(state.username)+'</strong><span class="guide-expand">▾</span></button>'+
+  '<div class="guide-section account-links">'+item("Settings","settings","gear")+item("Add Channels","discover","plus")+'</div>'+
+  '<div class="guide-caption">Channels</div><div class="guide-section">'+item("Home Feed","home","home")+sub+'</div>'+
+  '<div class="guide-caption">From YouTube</div><div class="guide-section">'+
+  category("Popular","internet","popular")+category("Film & Animation","animation","film")+category("Autos & Vehicles","autos","auto")+
+  category("Music","music","music")+category("Pets & Animals","pets","pets")+category("Sports","sports","sports")+
+  category("Travel & Events","travel","travel")+category("Gaming","gaming","gaming")+category("People & Blogs","people","people")+
+  '</div></div>';
+ $("#guide").innerHTML=desktop+mobile;
  $("#guide").classList.toggle("open",state.guideOpen);
  $("#guide-backdrop").hidden=!state.guideOpen;
 }
