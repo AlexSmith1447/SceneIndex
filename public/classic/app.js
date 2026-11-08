@@ -295,7 +295,9 @@ function settingsPage(){
  toggle("time","Use video date filter")+toggle("shorts","Hide Shorts")+toggle("comments","Show older comments only")+
  '<h2>Appearance</h2>'+toggle("historic","Use archived channel artwork when available")+
  '<p class="fineprint">This username is a local profile for this site, not a Google or YouTube sign-in. Historical channel artwork is not available yet; the setting is reserved for later implementation.</p>'+
- '<p class="fineprint">Video search: '+(state.api?'Connected':'Limited until API access is configured')+'. <a href="https://github.com/AlexSmith1447/SceneIndex/blob/main/docs/CLASSIC_YOUTUBE.md" target="_blank" rel="noopener noreferrer">About this project</a></p>'+
+ '<p class="fineprint">Video discovery: '+(state.api?'Connected to YouTube search. Recommendations are selected from retrieved videos.':'Not connected. The homepage uses a small local fallback until the Cloudflare secret YOUTUBE_API_KEY is configured.')+'</p>'+
+ (state.discoveryError?'<p class="fineprint">'+escapeHTML(state.discoveryError)+'</p>':"")+
+ '<p class="fineprint"><a href="https://github.com/AlexSmith1447/SceneIndex/blob/main/docs/CLASSIC_YOUTUBE.md" target="_blank" rel="noopener noreferrer">About this project</a></p>'+
  '</div>';
 }
 function toast(text){
