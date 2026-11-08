@@ -1,4 +1,5 @@
 import {seedVideos,topics,stableKey,isValidId,videoFromUrl,isBefore,thumbnail,normalizeSearchItem} from "./catalog.js";
+import {rankFeed,LANES,selectSourceTopics,recordImpressions} from "./discovery.js";
 
 const $=s=>document.querySelector(s);
 const icon=(name,cls="")=>'<svg class="yt-icon '+cls+'" aria-hidden="true"><use href="./icons.svg#'+name+'"></use></svg>';
@@ -7,10 +8,15 @@ const store=(key,value)=>{try{localStorage.setItem(stableKey+"."+key,JSON.string
 const load=(key,fallback)=>{try{const v=localStorage.getItem(stableKey+"."+key);return v?JSON.parse(v):fallback}catch{return fallback}};
 const defaults={year:2013,time:true,discovery:"balanced",shorts:true,historic:true,comments:true};
 const settings={...defaults,...load("settings",{})};
+const cachedRecommendations=load("discoveryCache",{year:0,expires:0,items:[]});
+const usableCache=cachedRecommendations.year===settings.year&&cachedRecommendations.expires>Date.now()&&Array.isArray(cachedRecommendations.items);
+const cachedPool=usableCache?cachedRecommendations.items:[];
 const state={
  settings,username:load("username","WesleyPigeon330"),page:"home",query:"",
  known:{...load("known",{})},saved:load("saved",[]),history:load("history",[]),
- subscriptions:load("subscriptions",[]),reactions:load("reactions",{}),results:[],discovered:[],
+ subscriptions:load("subscriptions",[]),reactions:load("reactions",{}),results:[],discovered:cachedPool,
+ impressions:load("impressions",{}),loadingDiscovery:false,discoveryBatch:0,feedSize:36,discoveryError:"",
+ lastRecommendationIds:[],loadCount:0,
  selection:"",current:null,comments:[],commentsLoaded:false,watchTab:"about",
  searchTab:"videos",filterOpen:false,searchSort:"relevance",searchChannels:[],channelsQuery:"",
  topic:"",loading:false,api:false,notice:"",guideOpen:false,accountOpen:false,searchOpen:false,shuffle:0
@@ -161,17 +167,25 @@ function render(){
  }
 }
 function home(){
- const all=ordered(catalog());
- const first=all.slice(0,9),more=all.slice(9,18);
- const followed=all.filter(v=>isFollowed(channelFor(v)));
- const group=followed.length?followed.slice(0,6):all.filter(v=>v.topic==="animation"||v.topic==="gaming").slice(0,6);
+ const discovered=state.discovered.filter(yearOk);
+ const hasRealPool=state.api&&discovered.length>=8;
+ const pool=hasRealPool?discovered:catalog();
+ const all=hasRealPool?rankFeed(pool,{
+  year:state.settings.year,time:state.settings.time,limit:Math.min(110,Math.max(48,state.feedSize)),
+  history:state.history,known:state.known,saved:state.saved,likes:state.reactions,
+  impressions:state.impressions,subscriptions:state.subscriptions,rotation:state.shuffle
+ }):ordered(pool);
+ const visible=all.slice(0,state.feedSize);
+ state.lastRecommendationIds=visible.slice(0,24).map(v=>v.id);
+ const fromSubscriptions=hasRealPool&&state.subscriptions.length?
+  visible.filter(v=>state.subscriptions.includes(v.channel)).slice(0,4):[];
  return '<div class="homepage"><div class="feed-header"><h1>What to watch</h1><button data-action="refresh" class="small-text-button">Refresh ↻</button></div>'+
- '<div class="desktop-feed-tabs"><span class="active-tab">Highlights</span><button type="button" data-page="subscriptions">Everything</button></div>'+
- (followed.length?'<section class="feed-section">'+line("From your subscriptions")+tiles(group.slice(0,6))+'</section>':"")+
- '<section class="feed-section primary">'+line("Recommended for you")+tiles(first)+'</section>'+
- (more.length?'<section class="feed-section">'+line("More videos")+tiles(more)+'</section>':"")+
-
- '</div>';
+  '<div class="desktop-feed-tabs"><span class="active-tab">Highlights</span><button type="button" data-page="subscriptions">Everything</button></div>'+
+  (fromSubscriptions.length?'<section class="feed-section">'+line("From your subscriptions")+tiles(fromSubscriptions)+'</section>':"")+
+  '<section class="feed-section primary">'+line("Recommended for you")+
+  (state.loadingDiscovery&&!hasRealPool?'<div class="feed-loading">Loading videos…</div>':tiles(visible))+'</section>'+
+  (hasRealPool?'<div class="feed-next"><button class="classic-button" data-action="load-more" type="button" '+(state.loadingDiscovery?'disabled':'')+'>'+(state.loadingDiscovery?'Loading…':'Load more videos')+'</button></div>':"")+
+  '</div>';
 }
 const availableTopics=[
  {id:"gaming",name:"Gaming"},{id:"animation",name:"Film & Animation"},{id:"music",name:"Music"},
@@ -367,11 +381,55 @@ async function fetchChannelSearch(query){
  finally{state.loading=false;render()}
 }
 async function fetchDiscovery(){
- if(!state.api){toast("Search is unavailable");return}
- const terms=state.topic?topics.find(x=>x.id===state.topic)?.terms||[]:topics.flatMap(x=>x.terms);
- if(!terms.length)return;
- const q=terms[state.shuffle%terms.length];state.shuffle++;
- await fetchSearch(q,true);
+ if(!state.api){toast("Video discovery needs the YouTube API connection");return}
+ if(state.loadingDiscovery)return;
+ state.discoveryBatch=(state.discoveryBatch+1)%9;
+ await populateHome({batch:state.discoveryBatch,lanes:["adjacent","general","obscure"],topicOverride:state.topic||""});
+}
+// A short-lived local cache keeps the iPhone PWA responsive; Cloudflare also caches
+// public source cohorts between visitors. No API keys are exposed to the browser.
+function saveDiscoveryPool(){
+ const items=unique(state.discovered.filter(v=>v.year&&isValidId(v.id))).slice(-360);
+ state.discovered=items;
+ store("discoveryCache",{items,year:state.settings.year,expires:Date.now()+24*3600*1000});
+ const knownItems=Object.values(state.known).filter(v=>v&&isValidId(v.id));
+ if(knownItems.length>520){
+  const active=new Set([...state.saved,...state.history.map(x=>x.id),...items.map(x=>x.id)]);
+  const kept=knownItems.filter(v=>active.has(v.id)||seedVideos.some(s=>s.id===v.id));
+  state.known=Object.fromEntries([...kept.slice(-460)].map(v=>[v.id,v]));
+ }
+ store("known",state.known);
+}
+async function populateHome({batch=0,lanes=LANES,topicOverride=""}={}){
+ if(!state.api||state.loadingDiscovery)return;
+ state.loadingDiscovery=true;state.discoveryError="";render();
+ try{
+  const topicPlan=selectSourceTopics({history:state.history,known:state.known,batch,rotation:state.shuffle});
+  const requests=lanes.map(async lane=>{
+   const url=new URL("../api/discover",location.href);
+   url.searchParams.set("lane",lane);
+   url.searchParams.set("topic",topicOverride||topicPlan[lane]);
+   url.searchParams.set("year",String(state.settings.time?state.settings.year:new Date().getUTCFullYear()));
+   url.searchParams.set("batch",String(batch));
+   const response=await fetch(url.toString());
+   const data=await response.json();
+   if(!response.ok)throw new Error(data.error||"Video discovery is unavailable");
+   return (data.items||[]).map(normalizeSearchItem).filter(Boolean).map(v=>({
+    ...v,topic:data.sourceTopic||topicPlan[lane],sourceLane:lane,verifiedPublishedAt:true
+   })).filter(yearOk);
+  });
+  const results=await Promise.allSettled(requests);
+  const added=results.filter(x=>x.status==="fulfilled").flatMap(x=>x.value);
+  const errors=results.filter(x=>x.status==="rejected");
+  if(added.length){
+   const ids=new Set(state.discovered.map(v=>v.id));
+   for(const v of added)if(!ids.has(v.id)){state.discovered.push(v);ids.add(v.id)}
+   for(const v of added)state.known[v.id]=v;
+   saveDiscoveryPool();
+  }
+  if(!added.length&&errors.length)state.discoveryError=String(errors[0].reason?.message||"Discovery unavailable");
+ }catch(e){state.discoveryError=e.message||"Discovery unavailable"}
+ finally{state.loadingDiscovery=false;render()}
 }
 async function fetchComments(){
  if(state.loading||!state.current||!state.api)return;
@@ -390,6 +448,7 @@ async function fetchComments(){
 async function checkAPI(){
  try{const r=await fetch("../api/youtube?mode=status",{cache:"no-store"});if(r.ok){const j=await r.json();state.api=Boolean(j.configured)}}catch{}
  render();
+ if(state.api&&state.page==="home"&&state.discovered.length<8)populateHome({batch:0});
 }
 async function searchSubmit(value){
  const term=value.trim();if(!term)return;
@@ -432,7 +491,25 @@ document.addEventListener("click",async e=>{
   case "toggle-guide":state.guideOpen=!state.guideOpen;state.accountOpen=false;render();return;
   case "account":state.accountOpen=!state.accountOpen;state.guideOpen=false;render();return;
   case "mobile-search":state.searchOpen=!state.searchOpen;render();if(state.searchOpen)$("#search-input").focus();return;
-  case "refresh":state.shuffle++;render();return;
+  case "refresh":
+   state.impressions=recordImpressions(state.lastRecommendationIds.map(id=>({id})),state.impressions);
+   store("impressions",state.impressions);
+   state.shuffle++;render();
+   if(state.api&&!state.loadingDiscovery){
+    state.discoveryBatch=(state.discoveryBatch+1)%9;
+    await populateHome({batch:state.discoveryBatch,lanes:["general","obscure"]});
+   }
+   return;
+  case "load-more":
+   state.feedSize=Math.min(108,state.feedSize+24);
+   state.impressions=recordImpressions(state.lastRecommendationIds.map(id=>({id})),state.impressions);
+   store("impressions",state.impressions);
+   render();
+   if(state.api&&state.discovered.length<state.feedSize+16&&!state.loadingDiscovery){
+    state.discoveryBatch=(state.discoveryBatch+1)%9;
+    await populateHome({batch:state.discoveryBatch,lanes:["familiar","general","obscure"]});
+   }
+   return;
   case "more-videos":await fetchDiscovery();return;
   case "clear-history":state.history=[];store("history",[]);render();return;
   case "load-comments":await fetchComments();return;
@@ -450,9 +527,21 @@ $("#search-form").addEventListener("submit",e=>{e.preventDefault();searchSubmit(
 document.addEventListener("change",e=>{
  const el=e.target;
  if(el.id==="username-input"){const name=el.value.trim();if(name){state.username=name;store("username",name)}}
- else if(el.id==="year-select"){state.settings.year=Number(el.value);state.results=state.results.filter(yearOk);state.discovered=state.discovered.filter(yearOk)}
+ else if(el.id==="year-select"){
+  state.settings.year=Number(el.value);state.results=state.results.filter(yearOk);
+  state.discovered=[];state.feedSize=36;state.discoveryBatch=0;
+  store("discoveryCache",{items:[],year:state.settings.year,expires:0});
+  if(state.api)Promise.resolve().then(()=>populateHome({batch:0}));
+ }
  else if(el.id==="mode-select")state.settings.discovery=el.value;
- else if(el.dataset.setting)state.settings[el.dataset.setting]=el.checked;
+ else if(el.dataset.setting){
+  state.settings[el.dataset.setting]=el.checked;
+  if(el.dataset.setting==="time"){
+   state.discovered=[];state.feedSize=36;
+   store("discoveryCache",{items:[],year:state.settings.year,expires:0});
+   if(state.api)Promise.resolve().then(()=>populateHome({batch:0}));
+  }
+ }
  else return;
  store("settings",state.settings);render();
 });
