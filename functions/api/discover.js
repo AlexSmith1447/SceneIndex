@@ -55,7 +55,7 @@ export async function onRequestGet({request,env}){
  const day=new Date().toISOString().slice(0,10);
  const canonical=new URL(request.url);
  canonical.search="";
- for(const [k,v] of Object.entries({batch:String(batch),day,lane,topic,year:String(year)}))canonical.searchParams.set(k,v);
+ for(const [k,v] of Object.entries({schema:"2",batch:String(batch),day,lane,topic,year:String(year)}))canonical.searchParams.set(k,v);
  const cache=typeof caches!=="undefined"?caches.default:null;
  const cacheKey=new Request(canonical.toString(),{method:"GET"});
  try{
