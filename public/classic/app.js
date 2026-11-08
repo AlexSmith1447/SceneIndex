@@ -168,7 +168,7 @@ function render(){
 }
 function home(){
  const discovered=state.discovered.filter(yearOk);
- const hasRealPool=state.api&&discovered.length>=8;
+ const hasRealPool=state.api&&discovered.length>0;
  const pool=hasRealPool?discovered:catalog();
  const all=hasRealPool?rankFeed(pool,{
   year:state.settings.year,time:state.settings.time,limit:Math.min(110,Math.max(48,state.feedSize)),
@@ -402,10 +402,20 @@ function saveDiscoveryPool(){
 }
 async function populateHome({batch=0,lanes=LANES,topicOverride=""}={}){
  if(!state.api||state.loadingDiscovery)return;
+ const day=new Date().toISOString().slice(0,10);
+ const budget=load("discoveryBudget",{day,requests:0});
+ const used=budget.day===day?Number(budget.requests)||0:0;
+ const selectedLanes=lanes.slice(0,Math.max(0,12-used));
+ if(!selectedLanes.length){
+  state.discoveryError="Daily discovery request limit reached.";
+  if(state.page==="home")toast("More video searches available tomorrow");
+  return;
+ }
+ store("discoveryBudget",{day,requests:used+selectedLanes.length});
  state.loadingDiscovery=true;state.discoveryError="";render();
  try{
   const topicPlan=selectSourceTopics({history:state.history,known:state.known,batch,rotation:state.shuffle});
-  const requests=lanes.map(async lane=>{
+  const requests=selectedLanes.map(async lane=>{
    const url=new URL("../api/discover",location.href);
    url.searchParams.set("lane",lane);
    url.searchParams.set("topic",topicOverride||topicPlan[lane]);
