@@ -10,7 +10,7 @@ const settings={...defaults,...load("settings",{})};
 const state={
  settings,username:load("username","WesleyPigeon330"),page:"home",query:"",
  known:{...load("known",{})},saved:load("saved",[]),history:load("history",[]),
- subscriptions:load("subscriptions",[]),results:[],discovered:[],
+ subscriptions:load("subscriptions",[]),reactions:load("reactions",{}),results:[],discovered:[],
  selection:"",current:null,comments:[],commentsLoaded:false,watchTab:"about",
  searchTab:"videos",filterOpen:false,searchSort:"relevance",searchChannels:[],channelsQuery:"",
  topic:"",loading:false,api:false,notice:"",guideOpen:false,accountOpen:false,searchOpen:false,shuffle:0
@@ -62,17 +62,35 @@ const channelVideos=name=>catalog().filter(v=>channelFor(v)===name);
 const isSaved=id=>state.saved.includes(id);
 const isFollowed=name=>state.subscriptions.includes(name);
 const dateText=v=>v.date?new Date(v.date+"T00:00:00Z").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"}):v.year?String(v.year):"";
+const durationText=iso=>{
+ if(!iso)return "";
+ const p=/^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(String(iso));
+ if(!p)return /^\d+:\d\d$/.test(String(iso))?iso:"";
+ const h=Number(p[1]||0),m=Number(p[2]||0),sec=Number(p[3]||0);
+ return h?`${h}:${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`:`${m}:${String(sec).padStart(2,"0")}`;
+};
+const relativeDate=v=>{
+ if(!v.date)return dateText(v);
+ const date=new Date(v.date+"T00:00:00Z").getTime(),cut=Date.UTC(Number(state.settings.year),11,31);
+ const days=Math.max(0,Math.floor((cut-date)/86400000));
+ if(days===0)return "today";
+ if(days<7)return days+" day"+(days!==1?"s":"")+" ago";
+ if(days<31)return Math.floor(days/7)+" weeks ago";
+ if(days<365)return Math.floor(days/30)+" months ago";
+ const y=Math.floor(days/365);return y+" year"+(y!==1?"s":"")+" ago";
+};
 const card=(v,layout="grid")=>{
  const channel=channelFor(v),watched=state.history.some(x=>x.id===v.id);
  return '<div class="clip '+layout+(watched?' watched':'')+'">'+
-  '<div class="mobile-activity"><span class="activity-avatar">'+escapeHTML(channel.charAt(0).toUpperCase())+'</span><strong>'+escapeHTML(channel)+'</strong> uploaded <span>'+escapeHTML(dateText(v))+'</span></div>'+
+  '<div class="mobile-activity"><span class="activity-avatar">'+escapeHTML(channel.charAt(0).toUpperCase())+'</span><strong>'+escapeHTML(channel)+'</strong> uploaded <span>'+escapeHTML(relativeDate(v))+'</span></div>'+
   '<button type="button" data-watch="'+v.id+'" class="clip-image" aria-label="Watch '+escapeHTML(v.title)+'">'+
   '<img loading="lazy" src="'+thumbnail(v.id)+'" alt="" onerror="this.style.opacity=.28">'+
-  '<span class="watch-overlay">▶</span></button>'+
+  (durationText(v.duration)?'<span class="thumb-duration">'+escapeHTML(durationText(v.duration))+'</span>':"")+
+  '<span class="watch-overlay">'+icon("play")+'</span></button>'+
   '<div class="clip-copy"><button type="button" data-watch="'+v.id+'" class="clip-title">'+escapeHTML(v.title||"Untitled")+'</button>'+
   '<div class="clip-byline">by <button type="button" data-channel="'+escapeHTML(channel)+'">'+escapeHTML(channel)+'</button></div>'+
   '<div class="clip-detail">'+escapeHTML(formatViews(v.views)||dateText(v))+'</div></div>'+
-  '<button type="button" class="clip-later" title="'+(isSaved(v.id)?"Remove from Watch later":"Watch later")+'" data-save="'+v.id+'">'+(isSaved(v.id)?"✓":"+ ")+'◷</button>'+
+  '<button type="button" class="clip-later" title="'+(isSaved(v.id)?"Remove from Watch later":"Watch later")+'" data-save="'+v.id+'">'+(isSaved(v.id)?icon("check"):icon("clock"))+'</button>'+
  '</div>';
 };
 const tiles=(list,style="grid")=>list.length?'<div class="clip-list '+style+'">'+list.map(x=>card(x,style)).join("")+'</div>':'<div class="blank">No videos found.</div>';
