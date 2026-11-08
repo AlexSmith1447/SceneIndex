@@ -193,7 +193,9 @@ const availableTopics=[
 ];
 function browse(){
  const selected=state.topic;
- const list=ordered(catalog()).filter(v=>!selected||v.topic===selected);
+ const aliases={internet:"culture",weird:"comedy",autos:"technology",pets:"animals"};
+ const topicId=aliases[selected]||selected;
+ const list=ordered(catalog()).filter(v=>!selected||v.topic===topicId||v.topic===selected);
  return '<div class="feed-header"><h1>Browse channels</h1><button data-action="refresh" class="small-text-button">Refresh ↻</button></div>'+
  '<div class="browse-tabs"><button data-topic="" class="'+(!selected?"active":"")+'">All categories</button>'+
  availableTopics.map(t=>'<button data-topic="'+t.id+'" class="'+(selected===t.id?'active':'')+'">'+t.name+'</button>').join("")+'</div>'+
@@ -384,7 +386,8 @@ async function fetchDiscovery(){
  if(!state.api){toast("Video discovery needs the YouTube API connection");return}
  if(state.loadingDiscovery)return;
  state.discoveryBatch=(state.discoveryBatch+1)%9;
- await populateHome({batch:state.discoveryBatch,lanes:["adjacent","general","obscure"],topicOverride:state.topic||""});
+ const aliases={internet:"culture",weird:"comedy",autos:"technology",pets:"animals"};
+ await populateHome({batch:state.discoveryBatch,lanes:["adjacent","general","obscure"],topicOverride:aliases[state.topic]||state.topic||""});
 }
 // A short-lived local cache keeps the iPhone PWA responsive; Cloudflare also caches
 // public source cohorts between visitors. No API keys are exposed to the browser.
