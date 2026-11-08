@@ -165,3 +165,60 @@
  .feed-next{margin:20px 0 8px;text-align:center}
  .feed-loading{padding:28px 14px;color:#777}
 }
+/* 2012-2013 watch metadata: original compact counts and vote bar */
+.vintage-rating{clear:both;margin:4px 0 11px;padding:0 2px}
+.rating-bar{display:flex;width:100%;height:6px;background:#bbb;border:1px solid #ccc;box-shadow:inset 0 1px 2px #0003;overflow:hidden}
+.rating-green{display:block;background:linear-gradient(#8dc75a,#559d25);height:100%}
+.rating-red{display:block;background:linear-gradient(#e77c70,#c53b35);height:100%}
+.rating-details{display:flex;justify-content:space-between;gap:9px;font-size:10px;color:#999;margin-top:5px}
+.rating-details a,.video-about-stat a{font-size:10px;color:#858585}
+.video-description{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.47;color:#444}
+.description-more{border:0;background:none;font-size:11px;font-weight:bold;color:#666;padding:3px 0 8px;cursor:pointer}
+.description-more:hover{text-decoration:underline}
+.video-about-stat{font-size:11px;color:#777;margin:6px 0}
+.video-about-channel{padding:10px 0 0;border-top:1px solid #e0e0e0;margin-top:10px;font-size:11px;color:#777}
+.video-about-channel button{border:0;background:none;padding:0;color:#167ac6;font-size:11px}
+.video-channel-avatar img,.channel-avatar img{width:100%;height:100%;object-fit:cover}
+.channel-tabs{display:flex;gap:3px}
+.channel-tabs button{padding:11px 16px;background:transparent;border:0;border-bottom:2px solid transparent;color:#777;font-size:12px}
+.channel-tabs button.selected{border-bottom-color:#cb171c;color:#333;font-weight:bold}
+.channel-about{padding:16px 12px;max-width:750px;background:#fff;font-size:12px;color:#555}
+.channel-about h2{font-size:15px;color:#444;font-weight:normal}
+.channel-about p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+.channel-about>div{margin:8px 0;color:#888}
+.channel-about small{font-size:10px;color:#a0a0a0}
+.comment-controls{display:flex;gap:2px;border-bottom:1px solid #d9d9d9;padding:0 0 9px;margin-bottom:8px}
+.comment-controls button{border:1px solid #d5d5d5;background:linear-gradient(#fff,#eee);color:#777;padding:7px 10px;font-size:11px}
+.comment-controls button.selected{background:linear-gradient(#ddd,#f2f2f2);border-color:#aaa;color:#333;font-weight:bold}
+.comment-hint{font-size:10px!important;color:#999!important;line-height:1.35;margin:8px 0 12px!important}
+.comment-error{font-size:11px;color:#a43a2f;padding:8px}
+.comment-more{margin:12px 0!important;width:auto}
+.comment-list{padding-top:2px}
+.comment{display:flex;gap:10px;padding:13px 0;border-bottom:1px solid #e7e7e7;background:transparent}
+.comment-picture{width:33px;height:33px;flex:none;object-fit:cover;display:flex;justify-content:center;align-items:center;background:#aaa;color:#fff;font:bold 13px Arial,Helvetica,sans-serif}
+.comment-main{flex:1;min-width:0}
+.comment-main .comment-author{line-height:1.3}
+.comment-main .comment-author span{font-size:10px;color:#999;font-weight:normal}
+.comment-main>p{white-space:pre-wrap;overflow-wrap:anywhere;color:#444;font-size:12px;line-height:1.48;margin:4px 0 5px}
+.comment-likes{font-size:10px;color:#999;padding-top:2px}
+.comment-replies{padding:3px 0 0 8px;margin-top:6px;border-left:2px solid #e8e8e8}
+.comment.reply{margin:0;border-bottom:0;padding:8px 0}
+.comment.reply .comment-picture{width:24px;height:24px}
+.comment-reply-link{color:#167ac6;border:0;background:none;padding:7px 0 2px;font-size:10px}
+@media(max-width:640px){
+ .vintage-rating{padding:5px 13px 7px;margin:0;background:#f7f7f7;border-bottom:1px solid #e3e3e3}
+ .rating-bar{height:7px;border:1px solid #ccc}
+ .rating-details{margin-top:5px;font-size:10px}
+ .watch-views{font-size:13px}
+ .video-description{font-size:12px}
+ .channel-tabs{padding:0 9px}
+ .channel-tabs button{font-size:12px;padding:12px}
+ .channel-about{padding:12px}
+ .comment-controls{margin:0 0 12px;padding:8px 0;background:#fff}
+ .comment-controls button{font-size:11px}
+ .comment-list{background:#fff}
+ .comment{padding:11px 0}
+ .comment-picture{width:32px;height:32px}
+ .comment-main>p{font-size:12px}
+ .comment-more{width:100%}
+}
