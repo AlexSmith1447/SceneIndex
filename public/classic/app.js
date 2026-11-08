@@ -232,22 +232,27 @@ function commentsArea(){
 }
 function watchPage(){
  const v=state.current;if(!v)return home();
- const channel=channelFor(v);
- const related=ordered(catalog().filter(x=>x.id!==v.id)).slice(0,12);
+ const channel=channelFor(v),related=ordered(catalog().filter(x=>x.id!==v.id)).slice(0,12);
  const iframe='<div class="video-player"><iframe title="YouTube video player" src="https://www.youtube-nocookie.com/embed/'+v.id+'?playsinline=1&rel=0" allow="encrypted-media;accelerometer;gyroscope;picture-in-picture;fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>';
- const subscribed=isFollowed(channel);
+ const subscribed=isFollowed(channel),react=state.reactions[v.id]||"";
+ const actionStrip='<div class="vintage-action-strip">'+
+  '<button type="button" class="'+(react==="like"?"pressed":"")+'" data-react="like" aria-label="Like video">'+icon("like")+'</button>'+
+  '<button type="button" class="'+(react==="dislike"?"pressed":"")+'" data-react="dislike" aria-label="Dislike video">'+icon("dislike")+'</button>'+
+  '<button type="button" data-action="share-video" aria-label="Share video">'+icon("share")+'</button></div>';
  const info='<div class="watch-title-row"><h1>'+escapeHTML(v.title||"Video")+'</h1></div>'+
  '<div class="watch-channel-line"><div class="video-channel-avatar">'+escapeHTML(channel.charAt(0).toUpperCase())+'</div>'+
  '<div class="watch-channel-name"><button data-channel="'+escapeHTML(channel)+'">'+escapeHTML(channel)+'</button>'+
  '<div class="watch-published">'+escapeHTML(dateText(v))+'</div></div>'+
- '<button data-subscribe="'+escapeHTML(channel)+'" class="subscribe-button '+(subscribed?'subscribed':'')+'">'+(subscribed?'✓ Subscribed':'+ Subscribe')+'</button></div>'+
+ '<button data-subscribe="'+escapeHTML(channel)+'" class="subscribe-button '+(subscribed?'subscribed':'')+'">'+(subscribed?icon("check")+' Subscribed':icon("plus")+' Subscribe')+'</button></div>'+
+ '<div class="watch-numbers"><div class="watch-likes">'+(v.likes!==null&&v.likes!==undefined?Number(v.likes).toLocaleString()+" likes":"")+'</div>'+
+ (v.views!==null&&v.views!==undefined?'<div class="watch-views">'+Number(v.views).toLocaleString()+'<small>views</small></div>':"")+'</div>'+
  '<div class="watch-toolbar"><div class="watch-toolbar-left"><button class="'+(state.watchTab==="about"?'current':'')+'" data-tab="about">About</button><button data-tab="share">Share</button><button data-tab="add">Add to</button></div></div>';
  const about='<div class="description">'+(v.date?'<p>Published on '+escapeHTML(dateText(v))+'</p>':'')+
  (v.note?'<p>'+escapeHTML(v.note)+'</p>':"")+'</div>';
  const details=state.watchTab==="share"?'<div class="description"><input readonly aria-label="Video link" value="'+escapeHTML(location.href)+'"><button class="classic-button" data-action="copy-link">Copy</button></div>':
- state.watchTab==="add"?'<div class="description"><button class="classic-button" data-save="'+v.id+'">'+(isSaved(v.id)?'✓ Added to Watch later':'+ Watch later')+'</button></div>':about;
- return '<div class="watch-page"><div class="watch-main">'+iframe+
- '<div class="mobile-watch-tabs"><button data-tab="about" class="'+(state.watchTab==="about"?'selected':'')+'">About</button><button data-tab="suggested" class="'+(state.watchTab==="suggested"?'selected':'')+'">Suggested</button><button data-tab="comments" class="'+(state.watchTab==="comments"?'selected':'')+'">Comments</button></div>'+
+ state.watchTab==="add"?'<div class="description"><button class="classic-button" data-save="'+v.id+'">'+(isSaved(v.id)?icon("check")+' Added to Watch later':icon("plus")+' Watch later')+'</button></div>':about;
+ return '<div class="watch-page"><div class="watch-main">'+actionStrip+iframe+
+ '<div class="mobile-watch-tabs"><div class="watch-segmented"><button data-tab="about" class="'+(state.watchTab==="about"?'selected':'')+'">About</button><button data-tab="suggested" class="'+(state.watchTab==="suggested"?'selected':'')+'">Suggested</button><button data-tab="comments" class="'+(state.watchTab==="comments"?'selected':'')+'">Comments</button></div></div>'+
  '<div class="watch-below">'+info+
  '<div class="watch-description '+(state.watchTab==="suggested"||state.watchTab==="comments"?'mobile-hidden':'')+'">'+details+'</div>'+
  '<div class="desktop-comments"><h2>All Comments</h2>'+commentsArea()+'</div>'+
@@ -394,10 +399,15 @@ function route(){
  navigate(["home","discover","subscriptions","saved","history","settings"].includes(p)?p:"home",null,{replace:true});
 }
 document.addEventListener("click",async e=>{
- const el=e.target.closest("button[data-action],button[data-page],button[data-watch],button[data-save],button[data-subscribe],button[data-channel],button[data-tab],button[data-topic],button[data-search-tab],button[data-sort]");
+ const el=e.target.closest("button[data-action],button[data-page],button[data-watch],button[data-save],button[data-subscribe],button[data-channel],button[data-tab],button[data-topic],button[data-search-tab],button[data-sort],button[data-react]");
  if(!el){if(state.accountOpen&&!e.target.closest("#account-menu")){state.accountOpen=false;header()}return}
  if(el.dataset.watch){watch(el.dataset.watch);return}
  if(el.dataset.save){save(el.dataset.save);return}
+ if(el.dataset.react&&state.current){
+  const id=state.current.id;
+  state.reactions[id]=state.reactions[id]===el.dataset.react?"":el.dataset.react;
+  store("reactions",state.reactions);render();return;
+ }
  if(el.dataset.subscribe){subscribe(el.dataset.subscribe);return}
  if(el.dataset.channel){state.selection=el.dataset.channel;navigate("channel");return}
  if(el.dataset.page){navigate(el.dataset.page);return}
@@ -419,7 +429,12 @@ document.addEventListener("click",async e=>{
   case "clear-history":state.history=[];store("history",[]);render();return;
   case "load-comments":await fetchComments();return;
   case "show-filters":toast("Results are sorted by relevance and filtered by your selected year.");return;
-  case "copy-link":try{await navigator.clipboard.writeText(location.href);toast("Link copied")}catch{toast("Copy failed")}return;
+  case "share-video":case "copy-link":
+   try{
+    if(el.dataset.action==="share-video"&&navigator.share)await navigator.share({title:state.current?.title||"YouTube",url:location.href});
+    else {await navigator.clipboard.writeText(location.href);toast("Link copied")}
+   }catch{toast("Sharing cancelled")}
+   return;
  }
 });
 $("#guide-backdrop").addEventListener("click",()=>{collapseMenus();render()});
