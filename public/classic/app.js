@@ -179,14 +179,31 @@ function channelPage(){
  '<div class="channel-tabs"><span class="active-tab">Videos</span></div><div class="channel-videos">'+tiles(ordered(list))+'</div></div>';
 }
 function searchPage(){
- const q=state.query.toLowerCase();
- const local=catalog().filter(v=>(v.title+" "+v.channel+" "+(v.tags||[]).join(" ")).toLowerCase().includes(q));
- const items=unique([...state.results.filter(yearOk),...local]);
- return '<div class="search-head"><div class="feed-header"><h1>Search results</h1></div><div class="search-filter">'+
- '<button type="button" data-action="show-filters">☷ Filters</button><span>'+items.length+' videos</span></div></div>'+
- (state.notice?'<p class="quiet-hint">'+escapeHTML(state.notice)+'</p>':"")+
- (!state.api?'<p class="quiet-hint">Search within available videos. <a href="https://www.youtube.com/results?search_query='+encodeURIComponent(state.query)+'" target="_blank" rel="noopener noreferrer">Search on YouTube ↗</a></p>':"")+
- tiles(items,"rows");
+ const items=searchEntries();
+ const channels=channelResults();
+ const filterPopup=state.filterOpen?'<div class="search-filter-panel"><div class="filter-heading">Sort by</div>'+
+  [["relevance","Relevance"],["date","Upload date"],["views","View count"]].map(([key,label])=>
+   '<button type="button" data-sort="'+key+'" class="'+(state.searchSort===key?"selected":"")+'">'+(state.searchSort===key?icon("check"):"")+label+'</button>').join("")+
+  '<div class="filter-caption">Videos published through '+escapeHTML(String(state.settings.year))+'</div></div>':"";
+ const toolbar='<div class="search-mobile-controls"><div class="search-segment">'+
+  '<button data-search-tab="videos" class="'+(state.searchTab==="videos"?"selected":"")+'">Videos</button>'+
+  '<button data-search-tab="channels" class="'+(state.searchTab==="channels"?"selected":"")+'">Channels</button>'+
+  '</div><button type="button" data-action="search-gear" class="search-filter-gear" aria-label="Search filters" aria-expanded="'+Boolean(state.filterOpen)+'">'+icon("gear")+'</button>'+filterPopup+'</div>';
+ const resultCards=state.searchTab==="channels"?
+  (channels.length?'<div class="channel-results">'+channels.map(c=>{
+   const avatar=c.thumbnail&&/^https:\/\//.test(c.thumbnail)?'<img src="'+escapeHTML(c.thumbnail)+'" alt="">':escapeHTML((c.name||"?").charAt(0).toUpperCase());
+   const subtitle=(c.videoCount!==undefined&&c.videoCount!==null?Number(c.videoCount).toLocaleString()+" videos":c.count?c.count+" videos":"");
+   const subs=c.subscribers!==undefined&&c.subscribers!==null?Number(c.subscribers).toLocaleString()+" subscribers":"";
+   return '<button type="button" class="channel-result" data-channel="'+escapeHTML(c.name)+'"><span class="channel-result-image">'+avatar+'</span>'+
+    '<span class="channel-result-meta"><strong>'+escapeHTML(c.name)+'</strong><small>'+escapeHTML(subtitle)+'</small><small>'+escapeHTML(subs)+'</small></span>'+icon("chevron","result-chevron")+'</button>'
+  }).join("")+'</div>':'<div class="blank">No channels found.</div>'):
+  tiles(items,"rows");
+ return '<div class="search-page">'+
+  '<div class="search-head"><div class="feed-header"><h1>Search results for '+escapeHTML(state.query)+'</h1></div></div>'+
+  toolbar+
+  (state.notice?'<p class="quiet-hint">'+escapeHTML(state.notice)+'</p>':"")+
+  (!state.api?'<p class="quiet-hint">Search available videos. <a href="https://www.youtube.com/results?search_query='+encodeURIComponent(state.query)+'" target="_blank" rel="noopener noreferrer">More results ↗</a></p>':"")+
+  resultCards+'</div>';
 }
 function commentsArea(){
  if(!state.settings.comments)return '<p class="muted">Comments are disabled in settings.</p>';
@@ -301,6 +318,23 @@ async function fetchSearch(query,isDiscovery=false){
  }catch(e){state.notice=e.message||"Search unavailable"}
  finally{state.loading=false;render()}
 }
+
+async function fetchChannelSearch(query){
+ if(state.loading||!state.api||!query)return;
+ state.loading=true;state.channelsQuery=query;render();
+ try{
+  const url=new URL("../api/youtube",location.href);
+  url.searchParams.set("mode","channels");url.searchParams.set("q",query);
+  if(state.settings.time)url.searchParams.set("year",String(state.settings.year));
+  const response=await fetch(url);const data=await response.json();
+  if(!response.ok)throw Error(data.error||"Channels unavailable");
+  state.searchChannels=(data.items||[]).map(ch=>({
+   name:ch.name,channelId:ch.channelId,thumbnail:ch.thumbnail,
+   videoCount:ch.videoCount,subscribers:ch.subscribers
+  })).filter(ch=>ch.name&&ch.channelId);
+ }catch(error){state.notice=error.message||"Channel search unavailable"}
+ finally{state.loading=false;render()}
+}
 async function fetchDiscovery(){
  if(!state.api){toast("Search is unavailable");return}
  const terms=state.topic?topics.find(x=>x.id===state.topic)?.terms||[]:topics.flatMap(x=>x.terms);
@@ -342,7 +376,7 @@ function route(){
  navigate(["home","discover","subscriptions","saved","history","settings"].includes(p)?p:"home",null,{replace:true});
 }
 document.addEventListener("click",async e=>{
- const el=e.target.closest("button[data-action],button[data-page],button[data-watch],button[data-save],button[data-subscribe],button[data-channel],button[data-tab],button[data-topic]");
+ const el=e.target.closest("button[data-action],button[data-page],button[data-watch],button[data-save],button[data-subscribe],button[data-channel],button[data-tab],button[data-topic],button[data-search-tab],button[data-sort]");
  if(!el){if(state.accountOpen&&!e.target.closest("#account-menu")){state.accountOpen=false;header()}return}
  if(el.dataset.watch){watch(el.dataset.watch);return}
  if(el.dataset.save){save(el.dataset.save);return}
@@ -350,8 +384,15 @@ document.addEventListener("click",async e=>{
  if(el.dataset.channel){state.selection=el.dataset.channel;navigate("channel");return}
  if(el.dataset.page){navigate(el.dataset.page);return}
  if(el.dataset.tab){state.watchTab=el.dataset.tab;render();return}
+ if(el.dataset.searchTab){state.searchTab=el.dataset.searchTab;state.filterOpen=false;render();
+  if(state.searchTab==="channels"&&state.api&&state.channelsQuery!==state.query)fetchChannelSearch(state.query);
+  return;
+ }
+ if(el.dataset.sort){state.searchSort=el.dataset.sort;state.filterOpen=false;render();return;}
  if(el.hasAttribute("data-topic")){state.topic=el.dataset.topic;navigate("discover");return}
  switch(el.dataset.action){
+  case "back":if(state.page==="search"||state.page==="watch"||state.page==="settings")navigate("home");else navigate("home");return;
+  case "search-gear":state.filterOpen=!state.filterOpen;render();return;
   case "toggle-guide":state.guideOpen=!state.guideOpen;state.accountOpen=false;render();return;
   case "account":state.accountOpen=!state.accountOpen;state.guideOpen=false;render();return;
   case "mobile-search":state.searchOpen=!state.searchOpen;render();if(state.searchOpen)$("#search-input").focus();return;
