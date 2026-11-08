@@ -182,7 +182,7 @@ function home(){
  return '<div class="homepage"><div class="feed-header"><h1>What to watch</h1><button data-action="refresh" class="small-text-button">Refresh ↻</button></div>'+
   '<div class="desktop-feed-tabs"><span class="active-tab">Highlights</span><button type="button" data-page="subscriptions">Everything</button></div>'+
   (fromSubscriptions.length?'<section class="feed-section">'+line("From your subscriptions")+tiles(fromSubscriptions)+'</section>':"")+
-  '<section class="feed-section primary">'+line("Recommended for you")+
+  '<section class="feed-section primary">'+line(hasRealPool?"Recommended for you":"Videos")+
   (state.loadingDiscovery&&!hasRealPool?'<div class="feed-loading">Loading videos…</div>':tiles(visible))+'</section>'+
   (hasRealPool?'<div class="feed-next"><button class="classic-button" data-action="load-more" type="button" '+(state.loadingDiscovery?'disabled':'')+'>'+(state.loadingDiscovery?'Loading…':'Load more videos')+'</button></div>':"")+
   '</div>';
