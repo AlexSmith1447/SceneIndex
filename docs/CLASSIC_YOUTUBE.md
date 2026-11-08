@@ -13,6 +13,8 @@ Implementation:
 - Mobile watch page includes period-inspired like/dislike/share SVG controls and recessed About/Suggested/Comments tabs. Local like/dislike interactions are not sent to YouTube. The official player remains unchanged inside its iframe.
 - The styles are a visual reconstruction based on screenshots, not yet verified pixel-for-pixel across iPhone sizes. Precise historical logo geometry, uploaded video avatars, native 2013 iOS status bar/keyboard, and official YouTube player chrome remain limitations.
 
+The desktop wordmark uses the authentic 2011–2013 SVG logo from Wikimedia Commons (public-domain textlogo; YouTube trademark still applies): https://commons.wikimedia.org/wiki/File:Logo_of_YouTube_(2011-2013).svg. The iPhone header uses separate white-on-dark logo styling for the native app appearance.
+
 Primary period references:
 - MacStories, original interface and search segmented gear: https://www.macstories.net/stories/the-reality-check-of-googles-new-youtube-app/
 - MacStories, December 2012 player / Guide: https://www.macstories.net/news/youtube-for-ios-gets-iphone-5-and-airplay-support-ipad-version/
