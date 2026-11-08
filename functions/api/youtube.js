@@ -151,7 +151,7 @@ export async function onRequestGet({request,env}){
     next=page.nextPageToken||"";
     if(!next||scanned===0)break;
    }
-   payload={items:items.slice(0,65),nextPageToken:next||null,scanned,calls,partial:!!next,
+   payload={items,nextPageToken:next||null,scanned,calls,partial:!!next,
     historical:!all,notice:"Top-level published comments and a subset of their available replies; deleted comments cannot be restored."};
    ttl=7200;
 
