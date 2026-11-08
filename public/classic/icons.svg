@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<defs><linearGradient id="silver" x1="0" y1="0" x2=".15" y2="1"><stop stop-color="#e9ebec"/><stop offset=".45" stop-color="#bcbfc1"/><stop offset="1" stop-color="#919598"/></linearGradient><linearGradient id="ytwhite" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fafafa"/><stop offset="1" stop-color="#a0a0a0"/></linearGradient></defs>
+<symbol id="menu" viewBox="0 0 28 28"><path d="M4 6h20v3H4zM4 13h20v3H4zM4 20h20v3H4z" fill="currentColor"/></symbol>
+<symbol id="search" viewBox="0 0 28 28"><circle cx="11.5" cy="11.5" r="7.4" fill="none" stroke="currentColor" stroke-width="3.2"/><path d="M17.2 17.5 25 25" stroke="currentColor" stroke-width="3.4" stroke-linecap="square"/></symbol>
+<symbol id="back" viewBox="0 0 28 28"><path d="M13 4 3 14l10 10v-6h12v-8H13z" fill="currentColor" stroke-linejoin="round"/></symbol>
+<symbol id="gear" viewBox="0 0 32 32"><path d="M16.000 4.800L18.221 1.975L20.388 2.495L21.085 6.021L22.583 6.939L26.041 5.959L27.488 7.653L25.979 10.915L26.652 12.539L30.025 13.779L30.200 16.000L27.062 17.752L26.652 19.461L28.652 22.447L27.488 24.347L23.920 23.920L22.583 25.061L22.447 28.652L20.388 29.505L17.752 27.062L16.000 27.200L13.779 30.025L11.612 29.505L10.915 25.979L9.417 25.061L5.959 26.041L4.512 24.347L6.021 21.085L5.348 19.461L1.975 18.221L1.800 16.000L4.938 14.248L5.348 12.539L3.348 9.553L4.512 7.653L8.080 8.080L9.417 6.939L9.553 3.348L11.612 2.495L14.248 4.938Z" fill="url(#silver)" stroke="#777" stroke-width=".9"/><circle cx="16" cy="16" r="6.2" fill="#8c8f91" stroke="#595959" stroke-width=".7"/><circle cx="16" cy="16" r="3.35" fill="#353535" stroke="#d6d6d6" stroke-width=".7"/><path d="M6 13 9 9 13 6" fill="none" stroke="#f9f9f9" stroke-width=".8" opacity=".7"/></symbol>
+<symbol id="home" viewBox="0 0 28 28"><path d="M2 14 14 3l12 11-3 3-2-2v10h-6v-8h-4v8H5V15l-1 2z" fill="currentColor"/></symbol>
+<symbol id="star" viewBox="0 0 28 28"><path d="m14 1 3.6 8.3L27 10l-7.3 6.3L22 26l-8-4.9L6 26l2.3-9.7L1 10l9.4-.7z" fill="currentColor"/></symbol>
+<symbol id="history" viewBox="0 0 28 28"><path d="M4 9H0l6-7 6 7H8a10 10 0 1 1-2 9" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M14 7v8l5 3" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></symbol>
+<symbol id="clock" viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M14 6v8l6 4" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></symbol>
+<symbol id="video" viewBox="0 0 28 28"><rect x="2" y="6" width="19" height="16" rx="2" fill="currentColor"/><path d="m10 10 7 4-7 4z" fill="#444"/><path d="m21 11 6-4v14l-6-4z" fill="currentColor"/></symbol>
+<symbol id="channels" viewBox="0 0 28 28"><circle cx="8" cy="9" r="4" fill="currentColor"/><circle cx="20" cy="9" r="4" fill="currentColor"/><path d="M0 25v-5q0-6 8-6t8 6v5zm13 0v-5q0-6 7-6t8 6v5z" fill="currentColor"/></symbol>
+<symbol id="like" viewBox="0 0 32 32"><path d="M4 14h6v16H4zm8 0 7-12q4-2 4 3l-1 7h7q4 1 2 6l-4 11H12z" fill="currentColor" stroke="#757575" stroke-width=".5"/></symbol>
+<symbol id="dislike" viewBox="0 0 32 32"><g transform="translate(32,32) rotate(180)"><path d="M4 14h6v16H4zm8 0 7-12q4-2 4 3l-1 7h7q4 1 2 6l-4 11H12z" fill="currentColor" stroke="#757575" stroke-width=".5"/></g></symbol>
+<symbol id="share" viewBox="0 0 32 32"><path d="M18 4v8C7 12 3 17 3 29 7 23 12 20 18 20v7L31 16z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/></symbol>
+<symbol id="play" viewBox="0 0 28 28"><path d="M5 2v24l21-12z" fill="currentColor"/></symbol>
+<symbol id="pause" viewBox="0 0 28 28"><path d="M4 3h7v22H4zm13 0h7v22h-7z" fill="currentColor"/></symbol>
+<symbol id="fullscreen" viewBox="0 0 28 28"><path d="M1 1h10v4H5v6H1zm16 0h10v10h-4V5h-6zM1 17h4v6h6v4H1zm22 0h4v10H17v-4h6z" fill="currentColor"/></symbol>
+<symbol id="airplay" viewBox="0 0 28 28"><rect x="1.5" y="2.5" width="25" height="17" rx="1.3" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="m14 16-9 10h18z" fill="currentColor"/></symbol>
+<symbol id="chevron" viewBox="0 0 28 28"><path d="m10 5 9 9-9 9" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="square"/></symbol>
+<symbol id="check" viewBox="0 0 28 28"><path d="M3 14 11 22 25 5" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="square"/></symbol>
+<symbol id="plus" viewBox="0 0 28 28"><path d="M14 3v22M3 14h22" stroke="currentColor" stroke-width="3.8" stroke-linecap="square"/></symbol>
+<symbol id="filter" viewBox="0 0 28 28"><path d="M3 7h22M7 14h14M11 21h6" stroke="currentColor" stroke-width="2.7" stroke-linecap="round"/></symbol>
+<symbol id="film" viewBox="0 0 28 28"><circle cx="14" cy="14" r="12" fill="currentColor"/><g fill="#383838"><circle cx="14" cy="14" r="2.5"/><circle cx="14" cy="6.8" r="3"/><circle cx="20.8" cy="12.1" r="3"/><circle cx="18.4" cy="20" r="3"/><circle cx="9.6" cy="20" r="3"/><circle cx="7.2" cy="12.1" r="3"/></g></symbol>
+<symbol id="music" viewBox="0 0 28 28"><path d="M12 4v17c0 3-3 5-7 5S0 24 0 22s3-5 8-5h1V6l17-5v17c0 3-3 5-7 5s-5-2-5-4 2-5 8-5V5z" fill="currentColor"/></symbol>
+<symbol id="gaming" viewBox="0 0 28 28"><path d="M6 7h16c4 0 5 3 6 13q0 4-3 4l-7-6h-8l-7 6q-3 0-3-4C1 10 2 7 6 7z" fill="currentColor"/><path d="M6 13h9M10 9v9" stroke="#333" stroke-width="2.5"/><circle cx="20" cy="12" r="1.5" fill="#333"/><circle cx="23" cy="15" r="1.5" fill="#333"/></symbol>
+<symbol id="popular" viewBox="0 0 28 28"><path d="m13 1 4 9 10 1-7.5 7 2.5 10-9-5.5L4 28l2.5-10L-1 11 9 10z" fill="currentColor"/></symbol>
+<symbol id="people" viewBox="0 0 28 28"><circle cx="14" cy="6" r="4" fill="currentColor"/><path d="M8 12h12l4 13h-6v-9h-1v12h-6V16h-1v9H4z" fill="currentColor"/></symbol>
+<symbol id="more" viewBox="0 0 28 28"><circle cx="6" cy="14" r="3" fill="currentColor"/><circle cx="14" cy="14" r="3" fill="currentColor"/><circle cx="22" cy="14" r="3" fill="currentColor"/></symbol>
+</svg>
