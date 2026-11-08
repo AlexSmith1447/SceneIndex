@@ -13,8 +13,8 @@ const STOP=new Set("a an the and or for to from of on at in it this that with ho
 const norm=s=>String(s||"").normalize("NFKC").toLowerCase().replace(/[\u0300-\u036f]/g,"");
 const tokenize=s=>(norm(s).match(/[\p{L}\p{N}]{2,}/gu)||[]).filter(w=>!STOP.has(w)).slice(0,220);
 const textFor=v=>[
- String(v.title||"").repeat(3),
- Array.isArray(v.tags)?v.tags.join(" ").repeat(2):"",
+ Array(3).fill(String(v.title||"")).join(" "),
+ Array.isArray(v.tags)?Array(2).fill(v.tags.join(" ")).join(" "):"",
  String(v.description||"").slice(0,650)
 ].join(" ");
 export function buildIndex(videos=[]){
