@@ -71,7 +71,8 @@ function videoScore(v,opts={}){
  const viewed=seenIndex>=0?1:0;
  const exposures=Math.min(4,Number(impressions[v.id])||0);
  const channelExposure=clamp((channelCounts.get(channel)||0)/5,0,1);
- let score=hash*2.6+followed*.7+liked*.8-disliked*4-viewed*2.2-exposures*.5;
+ const affinity=Math.max(0,Math.min(1,Number(opts.affinity?.get?.(v.id)||0)));
+ let score=hash*1.3+affinity*6+followed*.7+liked*.8-disliked*4-viewed*2.2-exposures*.5;
  if(lane==="familiar")score+=topicFamiliarity*1.5+channelExposure*.3;
  if(lane==="adjacent")score+=Math.min(1,topicFamiliarity)*.25;
  if(lane==="obscure"){
