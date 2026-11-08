@@ -35,7 +35,7 @@ export async function onRequestGet({request,env}){
  const url=new URL(request.url),p=url.searchParams,mode=p.get("mode")||"status",key=env?.YOUTUBE_API_KEY;
  if(mode==="status")return out({configured:!!key,provider:"YouTube Data API v3",searchAvailability:key?"enabled":"requires YOUTUBE_API_KEY"});
  if(!key)return out({error:"Full YouTube discovery isn't configured. Set YOUTUBE_API_KEY as a Cloudflare Pages secret.",code:"not_configured"},503);
- if(!["search","video","comments"].includes(mode))return out({error:"Unsupported operation"},400);
+ if(!["search","channels","video","comments"].includes(mode))return out({error:"Unsupported operation"},400);
  const year=validYear(p.get("year"));
  try{
   // Public data is deliberately cached by request URL, never by API key.
@@ -49,16 +49,47 @@ export async function onRequestGet({request,env}){
    const args={part:"snippet",type:"video",q,videoEmbeddable:"true",maxResults:30,order:"relevance",safeSearch:"moderate"};
    if(year)args.publishedBefore=(year+1)+"-01-01T00:00:00Z";
    const data=await upstream("search",args,key);
-   const items=(data.items||[]).filter(x=>ID.test(x.id?.videoId||"")).filter(x=>!year||new Date(x.snippet?.publishedAt).getUTCFullYear()<=year);
+   const rawItems=(data.items||[]).filter(x=>ID.test(x.id?.videoId||"")).filter(x=>!year||new Date(x.snippet?.publishedAt).getUTCFullYear()<=year);
+   const ids=rawItems.map(x=>x.id.videoId);
+   let details=new Map();
+   if(ids.length){
+    try{
+     const videoData=await upstream("videos",{part:"contentDetails,statistics,status",id:ids.join(",")},key);
+     details=new Map((videoData.items||[]).filter(x=>x.status?.embeddable!==false).map(x=>[x.id,x]));
+    }catch{}
+   }
+   const items=rawItems.filter(x=>!details.size||details.has(x.id.videoId)).map(x=>{
+    const d=details.get(x.id.videoId);
+    return {...x,duration:d?.contentDetails?.duration||null,views:d?.statistics?.viewCount?Number(d.statistics.viewCount):null,likes:d?.statistics?.likeCount?Number(d.statistics.likeCount):null};
+   });
    payload={items,source:"youtube-data-api",nextPageToken:data.nextPageToken||null};ttl=43200;
+  }else if(mode==="channels"){
+   const q=(p.get("q")||"").trim().slice(0,120);
+   if(q.length<2)return out({error:"Enter at least two characters"},400);
+   const args={part:"snippet",type:"channel",q,maxResults:20,order:"relevance",safeSearch:"moderate"};
+   if(year)args.publishedBefore=(year+1)+"-01-01T00:00:00Z";
+   const data=await upstream("search",args,key);
+   const raw=(data.items||[]).filter(x=>x.id?.channelId&&x.snippet);
+   const ids=raw.map(x=>x.id.channelId);
+   let details=new Map();
+   if(ids.length){
+    try{const ch=await upstream("channels",{part:"statistics,snippet",id:ids.join(",")},key);
+      details=new Map((ch.items||[]).map(x=>[x.id,x]))
+    }catch{}
+   }
+   const items=raw.map(x=>{
+    const d=details.get(x.id.channelId),stats=d?.statistics||{};
+    return {channelId:x.id.channelId,name:x.snippet.title||"Unknown",thumbnail:x.snippet.thumbnails?.default?.url||"",videoCount:stats.videoCount?Number(stats.videoCount):null,subscribers:!stats.hiddenSubscriberCount&&stats.subscriberCount?Number(stats.subscriberCount):null}
+   });
+   payload={items};ttl=43200;
   }else if(mode==="video"){
    const id=p.get("id")||"";
    if(!ID.test(id))return out({error:"Invalid video ID"},400);
-   const data=await upstream("videos",{part:"snippet,status",id},key);
+   const data=await upstream("videos",{part:"snippet,status,statistics,contentDetails",id},key);
    const item=data.items?.[0];
    if(!item||item.status?.embeddable===false)return out({error:"Video not found or cannot be embedded"},404);
    const x=cleanVideo(item);
-   payload={video:{id,title:x.snippet.title,channel:x.snippet.channelTitle,channelId:x.snippet.channelId,year:x.year,date:x.snippet.publishedAt.slice(0,10),topic:"explore",tags:[],live:true}};
+   payload={video:{id,title:x.snippet.title,channel:x.snippet.channelTitle,channelId:x.snippet.channelId,year:x.year,date:x.snippet.publishedAt.slice(0,10),topic:"explore",tags:[],live:true,views:item.statistics?.viewCount?Number(item.statistics.viewCount):null,likes:item.statistics?.likeCount?Number(item.statistics.likeCount):null,duration:item.contentDetails?.duration||null}};
    ttl=14400;
   }else{
    const id=p.get("id")||"";
