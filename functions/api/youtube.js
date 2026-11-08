@@ -35,7 +35,7 @@ export async function onRequestGet({request,env}){
  const url=new URL(request.url),p=url.searchParams,mode=p.get("mode")||"status",key=env?.YOUTUBE_API_KEY;
  if(mode==="status")return out({configured:!!key,provider:"YouTube Data API v3",searchAvailability:key?"enabled":"requires YOUTUBE_API_KEY"});
  if(!key)return out({error:"Full YouTube discovery isn't configured. Set YOUTUBE_API_KEY as a Cloudflare Pages secret.",code:"not_configured"},503);
- if(!["search","channels","video","comments"].includes(mode))return out({error:"Unsupported operation"},400);
+ if(!["search","channels","video","channel","comments","replies"].includes(mode))return out({error:"Unsupported operation"},400);
  const year=validYear(p.get("year"));
  try{
   // Public data is deliberately cached by request URL, never by API key.
@@ -54,13 +54,13 @@ export async function onRequestGet({request,env}){
    let details=new Map();
    if(ids.length){
     try{
-     const videoData=await upstream("videos",{part:"contentDetails,statistics,status",id:ids.join(",")},key);
+     const videoData=await upstream("videos",{part:"snippet,contentDetails,statistics,status",id:ids.join(",")},key);
      details=new Map((videoData.items||[]).filter(x=>x.status?.embeddable!==false).map(x=>[x.id,x]));
     }catch{}
    }
    const items=rawItems.filter(x=>!details.size||details.has(x.id.videoId)).map(x=>{
     const d=details.get(x.id.videoId);
-    return {...x,duration:d?.contentDetails?.duration||null,views:d?.statistics?.viewCount?Number(d.statistics.viewCount):null,likes:d?.statistics?.likeCount?Number(d.statistics.likeCount):null};
+    return {...x,duration:d?.contentDetails?.duration||null,views:d?.statistics?.viewCount?Number(d.statistics.viewCount):null,likes:d?.statistics?.likeCount?Number(d.statistics.likeCount):null,description:d?.snippet?.description||"",tags:Array.isArray(d?.snippet?.tags)?d.snippet.tags.slice(0,25):[]};
    });
    payload={items,source:"youtube-data-api",nextPageToken:data.nextPageToken||null};ttl=43200;
   }else if(mode==="channels"){
@@ -89,17 +89,72 @@ export async function onRequestGet({request,env}){
    const item=data.items?.[0];
    if(!item||item.status?.embeddable===false)return out({error:"Video not found or cannot be embedded"},404);
    const x=cleanVideo(item);
-   payload={video:{id,title:x.snippet.title,channel:x.snippet.channelTitle,channelId:x.snippet.channelId,year:x.year,date:x.snippet.publishedAt.slice(0,10),topic:"explore",tags:[],live:true,views:item.statistics?.viewCount?Number(item.statistics.viewCount):null,likes:item.statistics?.likeCount?Number(item.statistics.likeCount):null,duration:item.contentDetails?.duration||null}};
+   payload={video:{id,title:x.snippet.title,channel:x.snippet.channelTitle,channelId:x.snippet.channelId,year:x.year,date:x.snippet.publishedAt.slice(0,10),topic:"explore",tags:Array.isArray(item.snippet?.tags)?item.snippet.tags.slice(0,30):[],description:item.snippet?.description||"",categoryId:item.snippet?.categoryId||"",live:true,views:item.statistics?.viewCount==null?null:Number(item.statistics.viewCount),likes:item.statistics?.likeCount==null?null:Number(item.statistics.likeCount),commentCount:item.statistics?.commentCount==null?null:Number(item.statistics.commentCount),duration:item.contentDetails?.duration||null}};
    ttl=14400;
-  }else{
+  }else if(mode==="channel"){
    const id=p.get("id")||"";
+   if(!/^UC[A-Za-z0-9_-]{22}$/.test(id))return out({error:"Invalid channel ID"},400);
+   const data=await upstream("channels",{part:"snippet,brandingSettings,statistics",id},key);
+   const ch=data.items?.[0];
+   if(!ch)return out({error:"Channel not found"},404);
+   payload={channel:{channelId:id,name:ch.snippet?.title||"",avatar:ch.snippet?.thumbnails?.medium?.url||ch.snippet?.thumbnails?.default?.url||"",
+    description:ch.snippet?.description||"",createdAt:ch.snippet?.publishedAt||"",
+    banner:ch.brandingSettings?.image?.bannerExternalUrl||"",
+    subscribers:ch.statistics?.hiddenSubscriberCount?null:ch.statistics?.subscriberCount==null?null:Number(ch.statistics.subscriberCount)}};
+   ttl=86400;
+  }else if(mode==="replies"){
+   const parent=p.get("parent")||"",token=p.get("pageToken")||"";
+   if(!/^[A-Za-z0-9_-]{8,200}$/.test(parent)||token.length>1024||!/^[A-Za-z0-9_\-=%]*$/.test(token))return out({error:"Invalid comment identifier"},400);
+   const args={part:"snippet",parentId:parent,maxResults:100,textFormat:"plainText"};
+   if(token)args.pageToken=token;
+   const data=await upstream("comments",args,key);
+   const comments=(data.items||[]).map(x=>({id:x.id,s:x.snippet})).filter(x=>x.s).map(x=>({
+    id:x.id,parentId:parent,author:x.s.authorDisplayName||"Unknown",avatar:x.s.authorProfileImageUrl||"",authorUrl:x.s.authorChannelUrl||"",
+    date:(x.s.publishedAt||"").slice(0,10),text:x.s.textDisplay||"",likes:x.s.likeCount??0,isReply:true
+   })).filter(x=>x.date&&(!year||Number(x.date.slice(0,4))<=year));
+   payload={items:comments,nextPageToken:data.nextPageToken||null};ttl=3600;
+  }else{
+   const id=p.get("id")||"",token=p.get("pageToken")||"",all=p.get("all")==="1";
    if(!ID.test(id))return out({error:"Invalid video ID"},400);
    if(!year)return out({error:"Historical year is required"},400);
-   const data=await upstream("commentThreads",{part:"snippet",videoId:id,maxResults:100,order:"relevance",textFormat:"plainText"},key);
-   const items=(data.items||[]).map(x=>x.snippet?.topLevelComment?.snippet).filter(Boolean).map(s=>({
-    author:s.authorDisplayName||"Unknown",date:(s.publishedAt||"").slice(0,10),text:s.textOriginal||s.textDisplay||""
-   })).filter(x=>x.date&&new Date(x.date+"T00:00:00Z")<new Date((year+1)+"-01-01T00:00:00Z")).slice(0,50);
-   payload={items,partial:true,note:"A filtered sample of available top-level comments, not a historical archive."};ttl=14400;
+   if(token.length>1024||!/^[A-Za-z0-9_\-=%]*$/.test(token))return out({error:"Invalid page token"},400);
+   // The API does not offer "oldest first" ordering. Relevance can return
+   // many modern comments on old videos; scan up to four separate pages per
+   // click and expose a continuation rather than pretending only 3 survive.
+   let next=token,scanned=0,calls=0,items=[];
+   while(calls<(all?1:4)&&items.length<(all?65:28)){
+    const args={part:"snippet,replies",videoId:id,maxResults:100,order:"relevance",textFormat:"plainText"};
+    if(next)args.pageToken=next;
+    const page=await upstream("commentThreads",args,key);
+    calls++;scanned+=(page.items||[]).length;
+    for(const thread of page.items||[]){
+     const top=thread.snippet?.topLevelComment;
+     const c=top?.snippet;
+     if(!c?.publishedAt)continue;
+     const date=c.publishedAt.slice(0,10);
+     if(!all&&Number(date.slice(0,4))>year)continue;
+     const replies=(thread.replies?.comments||[]).filter(x=>x?.snippet?.publishedAt)
+      .filter(x=>all||Number(x.snippet.publishedAt.slice(0,4))<=year)
+      .map(x=>({
+       id:x.id,parentId:top.id,author:x.snippet.authorDisplayName||"Unknown",
+       avatar:x.snippet.authorProfileImageUrl||"",authorUrl:x.snippet.authorChannelUrl||"",
+       date:x.snippet.publishedAt.slice(0,10),text:x.snippet.textDisplay||"",
+       likes:x.snippet.likeCount??0,isReply:true
+      }));
+     items.push({
+      id:top.id,author:c.authorDisplayName||"Unknown",avatar:c.authorProfileImageUrl||"",
+      authorUrl:c.authorChannelUrl||"",date,text:c.textDisplay||"",
+      likes:c.likeCount??0,replyCount:Number(thread.snippet?.totalReplyCount)||0,
+      replies
+     });
+    }
+    next=page.nextPageToken||"";
+    if(!next||scanned===0)break;
+   }
+   payload={items:items.slice(0,65),nextPageToken:next||null,scanned,calls,partial:!!next,
+    historical:!all,notice:"Top-level published comments and a subset of their available replies; deleted comments cannot be restored."};
+   ttl=7200;
+
   }
   const response=out(payload,200,ttl);
   if(cache)await cache.put(cacheRequest,response.clone());
