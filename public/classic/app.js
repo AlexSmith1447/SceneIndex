@@ -9,7 +9,7 @@ const store=(key,value)=>{try{localStorage.setItem(stableKey+"."+key,JSON.string
 const load=(key,fallback)=>{try{const v=localStorage.getItem(stableKey+"."+key);return v?JSON.parse(v):fallback}catch{return fallback}};
 const defaults={year:2013,time:true,discovery:"balanced",shorts:true,historic:true,comments:true};
 const settings={...defaults,...load("settings",{})};
-const cachedRecommendations=load("discoveryCache",{year:0,expires:0,items:[]});
+const cachedRecommendations=load("discoveryCacheV2",{year:0,expires:0,items:[]});
 const usableCache=cachedRecommendations.year===settings.year&&cachedRecommendations.expires>Date.now()&&Array.isArray(cachedRecommendations.items);
 const cachedPool=usableCache?cachedRecommendations.items:[];
 const state={
@@ -478,7 +478,7 @@ async function fetchDiscovery(){
 function saveDiscoveryPool(){
  const items=unique(state.discovered.filter(v=>v.year&&isValidId(v.id))).slice(-360);
  state.discovered=items;
- store("discoveryCache",{items,year:state.settings.year,expires:Date.now()+24*3600*1000});
+ store("discoveryCacheV2",{items,year:state.settings.year,expires:Date.now()+24*3600*1000});
  const knownItems=Object.values(state.known).filter(v=>v&&isValidId(v.id));
  if(knownItems.length>520){
   const active=new Set([...state.saved,...state.history.map(x=>x.id),...items.map(x=>x.id)]);
@@ -671,7 +671,7 @@ document.addEventListener("change",e=>{
  else if(el.id==="year-select"){
   state.settings.year=Number(el.value);state.results=state.results.filter(yearOk);
   state.discovered=[];state.feedSize=36;state.discoveryBatch=0;
-  store("discoveryCache",{items:[],year:state.settings.year,expires:0});
+  store("discoveryCacheV2",{items:[],year:state.settings.year,expires:0});
   if(state.api)Promise.resolve().then(()=>populateHome({batch:0}));
  }
  else if(el.id==="mode-select")state.settings.discovery=el.value;
@@ -679,7 +679,7 @@ document.addEventListener("change",e=>{
   state.settings[el.dataset.setting]=el.checked;
   if(el.dataset.setting==="time"){
    state.discovered=[];state.feedSize=36;
-   store("discoveryCache",{items:[],year:state.settings.year,expires:0});
+   store("discoveryCacheV2",{items:[],year:state.settings.year,expires:0});
    if(state.api)Promise.resolve().then(()=>populateHome({batch:0}));
   }
  }
