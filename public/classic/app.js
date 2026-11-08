@@ -153,6 +153,10 @@ function render(){
      const next=template.querySelector(selector),old=main.querySelector(selector);
      if(next&&old)old.replaceWith(next);
    }
+   const incomingRating=template.querySelector(".vintage-rating"),previousRating=main.querySelector(".vintage-rating");
+   if(incomingRating&&previousRating)previousRating.replaceWith(incomingRating);
+   else if(incomingRating)main.querySelector(".watch-numbers")?.after(incomingRating);
+   else if(previousRating)previousRating.remove();
    return;
  }
  main.dataset.watchId=state.page==="watch"&&state.current?state.current.id:"";
