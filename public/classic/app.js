@@ -371,22 +371,55 @@ function watch(id,{replace=false}={}){
  collapseMenus();state.current=state.known[id]||{id,title:"Video",channel:"Unknown channel",year:0};
  state.known[id]=state.current;store("known",state.known);
  state.page="watch";state.watchTab="about";state.comments=[];state.commentsLoaded=false;
+ state.commentsPageToken=null;state.commentsScanned=0;state.commentsAll=false;state.commentsError="";
+ state.descriptionExpanded=false;
  state.history=[{id},...state.history.filter(x=>x.id!==id)].slice(0,120);store("history",state.history);
  const url=new URL(location.href);url.search="";url.searchParams.set("v",id);
  window.history[replace?"replaceState":"pushState"]({},"",url.pathname+url.search);
  window.scrollTo(0,0);render();
- if(!Number(state.current.year)&&state.api)hydrate(id);
+ if(state.api){
+  if(!state.current.channelId||!state.current.description||state.current.views==null)hydrate(id);
+  else hydrateChannel(state.current.channelId);
+  if(window.innerWidth>640)fetchComments({reset:true});
+ }
+ hydrateRatings(id);
 }
+const channelPending=new Set(),ratingPending=new Set();
 async function hydrate(id){
- try{const r=await fetch("../api/youtube?mode=video&id="+encodeURIComponent(id));const data=await r.json();
+ try{
+  const r=await fetch("../api/youtube?mode=video&id="+encodeURIComponent(id));
+  const data=await r.json();
   if(r.ok&&data.video&&state.current?.id===id){
-    state.known[id]=data.video;store("known",state.known);
-    if(state.settings.time&&Number(data.video.year)>Number(state.settings.year)){
-      navigate("home");toast("This video was uploaded later.");return;
-    }
-    state.current=data.video;render();
+   const merged={...state.known[id],...data.video};
+   state.known[id]=merged;store("known",state.known);
+   if(state.settings.time&&Number(merged.year)>Number(state.settings.year)){
+    navigate("home");toast("This video was uploaded later.");return;
    }
+   state.current=merged;render();
+   if(merged.channelId)hydrateChannel(merged.channelId);
+  }
  }catch{}
+}
+async function hydrateChannel(channelId){
+ if(!state.api||!/^UC[A-Za-z0-9_-]{22}$/.test(channelId)||channelPending.has(channelId)||state.channelData[channelId])return;
+ channelPending.add(channelId);
+ try{
+  const response=await fetch("../api/youtube?mode=channel&id="+encodeURIComponent(channelId));
+  const data=await response.json();
+  if(response.ok&&data.channel){state.channelData[channelId]=data.channel;render()}
+ }catch{}
+ finally{channelPending.delete(channelId)}
+}
+async function hydrateRatings(videoId){
+ if(!isValidId(videoId)||ratingPending.has(videoId)||Object.prototype.hasOwnProperty.call(state.ratings,videoId))return;
+ ratingPending.add(videoId);
+ try{
+  const response=await fetch("../api/ratings?id="+encodeURIComponent(videoId));
+  const data=await response.json();
+  state.ratings[videoId]=response.ok&&data?.estimated&&Number.isFinite(data.likes)&&Number.isFinite(data.dislikes)?data:null;
+  if(state.current?.id===videoId)render();
+ }catch{state.ratings[videoId]=null}
+ finally{ratingPending.delete(videoId)}
 }
 function save(id){
  if(state.saved.includes(id)){state.saved=state.saved.filter(x=>x!==id);toast("Removed from Watch later")}
@@ -536,6 +569,12 @@ async function checkAPI(){
  try{const r=await fetch("../api/youtube?mode=status",{cache:"no-store"});if(r.ok){const j=await r.json();state.api=Boolean(j.configured)}}catch{}
  render();
  if(state.api&&state.page==="home"&&state.discovered.length<8)populateHome({batch:0});
+ if(state.api&&state.page==="watch"&&state.current){
+  const v=state.current;
+  if(!v.channelId||!v.description||v.views==null)hydrate(v.id);
+  else hydrateChannel(v.channelId);
+  if(window.innerWidth>640&&!state.commentsLoaded)fetchComments({reset:true});
+ }
 }
 async function searchSubmit(value){
  const term=value.trim();if(!term)return;
