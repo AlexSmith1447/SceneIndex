@@ -252,11 +252,30 @@ function searchPage(){
   resultCards+'</div>';
 }
 function commentsArea(){
- if(!state.settings.comments)return '<p class="muted">Comments are disabled in settings.</p>';
- if(!state.api)return '<p class="muted">Comments are unavailable.</p>';
- if(!state.commentsLoaded)return '<button type="button" class="classic-button" data-action="load-comments" '+(state.loading?'disabled':'')+'>'+(state.loading?'Loading…':'Load comments')+'</button>';
- if(!state.comments.length)return '<p class="muted">No comments available.</p>';
- return '<div class="comment-list">'+state.comments.map(c=>'<div class="comment"><div class="comment-author">'+escapeHTML(c.author)+' <span>'+escapeHTML(c.date)+'</span></div><p>'+escapeHTML(c.text)+'</p></div>').join("")+'</div>';
+ if(!state.settings.comments)return '<p class="muted">Comments disabled in Settings.</p>';
+ if(!state.api)return '<p class="muted">Comments unavailable.</p>';
+ const controls='<div class="comment-controls">'+
+  '<button type="button" data-action="comments-historical" class="'+(!state.commentsAll?'selected':'')+'">Older comments</button>'+
+  '<button type="button" data-action="comments-all" class="'+(state.commentsAll?'selected':'')+'">All comments</button>'+
+  '</div>';
+ const row=c=>{
+  const avatar=typeof c.avatar==="string"&&/^https:\/\//.test(c.avatar)?
+   '<img class="comment-picture" loading="lazy" referrerpolicy="no-referrer" alt="" src="'+escapeHTML(c.avatar)+'" onerror="this.style.visibility='+"'hidden'"+'">':
+   '<span class="comment-picture placeholder">'+escapeHTML((c.author||"?").charAt(0))+'</span>';
+  const replies=(c.replies||[]).map(reply=>row({...reply,replies:[],replyCount:0,isReply:true})).join("");
+  const rest=c.replyCount&&c.replyCount>(c.replies||[]).length?'<button type="button" class="comment-reply-link" data-replies="'+escapeHTML(c.id)+'">'+c.replyCount+' replies</button>':"";
+  return '<div class="comment '+(c.isReply?'reply':'')+'">'+avatar+
+   '<div class="comment-main"><div class="comment-author">'+escapeHTML(c.author)+' <span>'+escapeHTML(c.date)+'</span></div>'+
+   '<p>'+escapeHTML(c.text)+'</p>'+
+   (c.likes?'<div class="comment-likes">'+Number(c.likes).toLocaleString()+" likes</div>":"")+
+   (replies?'<div class="comment-replies">'+replies+'</div>':"")+rest+'</div></div>';
+ };
+ const list=state.comments.length?'<div class="comment-list">'+state.comments.map(row).join("")+'</div>':
+ '<p class="muted">'+(state.commentsLoading?'Finding comments…':state.commentsAll?"No comments returned.":"No older comments found on the pages checked.")+'</p>';
+ const note=!state.commentsAll?'<p class="comment-hint">Only surviving comments published by '+state.settings.year+' are displayed. Older pages may contain more.</p>':"";
+ const more=state.commentsPageToken?'<button type="button" class="classic-button comment-more" data-action="load-more-comments" '+(state.commentsLoading?'disabled':'')+'>'+(state.commentsLoading?'Loading…':'Load more comments')+'</button>':"";
+ const loadInitial=!state.commentsLoaded?'<button type="button" class="classic-button comment-more" data-action="load-comments" '+(state.commentsLoading?'disabled':'')+'>'+(state.commentsLoading?'Loading…':'Load comments')+'</button>':"";
+ return controls+note+list+loadInitial+more+(state.commentsError?'<p class="comment-error">'+escapeHTML(state.commentsError)+'</p>':"");
 }
 function watchPage(){
  const v=state.current;if(!v)return home();
@@ -450,19 +469,42 @@ async function populateHome({batch=0,lanes=LANES,topicOverride=""}={}){
  }catch(e){state.discoveryError=e.message||"Discovery unavailable"}
  finally{state.loadingDiscovery=false;render()}
 }
-async function fetchComments(){
- if(state.loading||!state.current||!state.api)return;
- state.loading=true;render();
+async function fetchComments({reset=false}={}){
+ if(state.commentsLoading||!state.current||!state.api)return;
+ const videoId=state.current.id,all=state.commentsAll;
+ if(reset){state.comments=[];state.commentsPageToken=null;state.commentsScanned=0;state.commentsLoaded=false;}
+ state.commentsLoading=true;state.commentsError="";render();
  try{
   const url=new URL("../api/youtube",location.href);
-  url.searchParams.set("mode","comments");url.searchParams.set("id",state.current.id);
+  url.searchParams.set("mode","comments");url.searchParams.set("id",videoId);
   url.searchParams.set("year",String(state.settings.year));
-  const r=await fetch(url);const data=await r.json();
-  if(!r.ok)throw Error(data.error||"Comments not available");
-  state.comments=(data.items||[]).filter(c=>c.date&&Number(c.date.slice(0,4))<=state.settings.year);
+  if(all)url.searchParams.set("all","1");
+  if(state.commentsPageToken)url.searchParams.set("pageToken",state.commentsPageToken);
+  const response=await fetch(url);
+  const data=await response.json();if(!response.ok)throw Error(data.error||"Comments unavailable");
+  if(state.current?.id!==videoId||state.commentsAll!==all)return;
+  const previous=new Set(state.comments.map(c=>c.id));
+  const added=(data.items||[]).filter(c=>c.id&&!previous.has(c.id));
+  state.comments.push(...added);
+  state.commentsPageToken=data.nextPageToken||null;
+  state.commentsScanned+=Number(data.scanned)||0;
   state.commentsLoaded=true;
- }catch(e){toast(e.message||"Could not load comments")}
- finally{state.loading=false;render()}
+ }catch(error){state.commentsError=error.message||"Could not load comments";}
+ finally{state.commentsLoading=false;render()}
+}
+async function fetchReplies(parent){
+ if(!parent||!state.current||!state.api)return;
+ const videoId=state.current.id;
+ try{
+  const url=new URL("../api/youtube",location.href);
+  url.searchParams.set("mode","replies");url.searchParams.set("parent",parent);
+  url.searchParams.set("year",String(state.commentsAll?new Date().getUTCFullYear():state.settings.year));
+  const response=await fetch(url);const data=await response.json();
+  if(!response.ok)throw Error(data.error||"Replies unavailable");
+  if(state.current?.id!==videoId)return;
+  state.comments=state.comments.map(c=>c.id===parent?{...c,replies:data.items||[],replyCount:(data.items||[]).length}:c);
+  render();
+ }catch(error){toast(error.message||"Replies unavailable")}
 }
 async function checkAPI(){
  try{const r=await fetch("../api/youtube?mode=status",{cache:"no-store"});if(r.ok){const j=await r.json();state.api=Boolean(j.configured)}}catch{}
@@ -485,10 +527,11 @@ function route(){
  navigate(["home","discover","subscriptions","saved","history","settings"].includes(p)?p:"home",null,{replace:true});
 }
 document.addEventListener("click",async e=>{
- const el=e.target.closest("button[data-action],button[data-page],button[data-watch],button[data-save],button[data-subscribe],button[data-channel],button[data-tab],button[data-topic],button[data-search-tab],button[data-sort],button[data-react]");
+ const el=e.target.closest("button[data-action],button[data-page],button[data-watch],button[data-save],button[data-subscribe],button[data-channel],button[data-tab],button[data-topic],button[data-search-tab],button[data-sort],button[data-react],button[data-replies]");
  if(!el){if(state.accountOpen&&!e.target.closest("#account-menu")){state.accountOpen=false;header()}return}
  if(el.dataset.watch){watch(el.dataset.watch);return}
  if(el.dataset.save){save(el.dataset.save);return}
+ if(el.dataset.replies){await fetchReplies(el.dataset.replies);return}
  if(el.dataset.react&&state.current){
   const id=state.current.id;
   state.reactions[id]=state.reactions[id]===el.dataset.react?"":el.dataset.react;
@@ -497,7 +540,11 @@ document.addEventListener("click",async e=>{
  if(el.dataset.subscribe){subscribe(el.dataset.subscribe);return}
  if(el.dataset.channel){state.selection=el.dataset.channel;navigate("channel");return}
  if(el.dataset.page){navigate(el.dataset.page);return}
- if(el.dataset.tab){state.watchTab=el.dataset.tab;render();return}
+ if(el.dataset.tab){
+  state.watchTab=el.dataset.tab;render();
+  if(el.dataset.tab==="comments"&&!state.commentsLoaded&&state.api)fetchComments({reset:true});
+  return
+ }
  if(el.dataset.searchTab){state.searchTab=el.dataset.searchTab;state.filterOpen=false;render();
   if(state.searchTab==="channels"&&state.api&&state.channelsQuery!==state.query)fetchChannelSearch(state.query);
   return;
@@ -531,7 +578,10 @@ document.addEventListener("click",async e=>{
    return;
   case "more-videos":await fetchDiscovery();return;
   case "clear-history":state.history=[];store("history",[]);render();return;
-  case "load-comments":await fetchComments();return;
+  case "load-comments":await fetchComments({reset:true});return;
+  case "load-more-comments":await fetchComments();return;
+  case "comments-all":state.commentsAll=true;await fetchComments({reset:true});return;
+  case "comments-historical":state.commentsAll=false;await fetchComments({reset:true});return;
   case "show-filters":toast("Results are sorted by relevance and filtered by your selected year.");return;
   case "share-video":case "copy-link":
    try{
